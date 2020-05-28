@@ -7,6 +7,7 @@ from board import *
 W = 'white'
 B = 'black'
 
+debug = True
 WIDTH = 900
 HEIGHT = 900
 RACK_HEIGHT = 160
@@ -62,10 +63,10 @@ board.board[7][7] = Ant(W)
 
 
 def setup_racks(rack, top=True):
-    y = 0 #if start == 0 else RACK_HEIGHT - 60
+    y = 0  # if start == 0 else RACK_HEIGHT - 60
     for r, _ in enumerate(rack.board):
         x = 120
-        y += 20 #if start == 0 else -20
+        y += 20  # if start == 0 else -20
         for _, hexa in enumerate(rack.board[r]):
             rack_surf = rack_top_surf if top else rack_bottom_surf
             rack_surf.blit(hexa.image, (x, y))
@@ -96,7 +97,9 @@ def draw_placed_tiles():
 
 
 def get_possible_moves_from_rack(player):
+    global debug
     possible_moves = []
+    f_x, f_y, v_x, v_y = None, None, None, None
     for r, _ in enumerate(board.board):
         for c, hexa in enumerate(board.board[r]):
             neighbours = get_cell_neighbours(r, c)
@@ -105,40 +108,38 @@ def get_possible_moves_from_rack(player):
             for x, y in neighbours:
                 if board.board[x][y].player == player:
                     found_own_tile = True
+                    f_x, f_y = x, y
                 elif board.board[x][y].player == opp(player):
                     valid_placement = False
+                    v_x, v_y = x, y
+            # if debug and found_own_tile:
+            #     print((r, c), (f_x, f_y), (v_x, v_y))
             if found_own_tile and valid_placement:
                 board.board[r][c].image = pygame.image.load(f'../img_assets/possible.png')
-
-
-            # if hexa.player == player:
-            #     neighbours = get_cell_neighbours(r+3, c)
-            #     for x, y in neighbours:
-            #         if board.board[x][y].player == opp(player):
-            #             break
-            #         if board.board[x][y].player == player or not board.board[x][y].playable:
-            #             board.board[r][c].playable = False
-            #         else:
-            #             board.board[r][c].playable = True
-            #             board.board[r][c].image = pygame.image.load(f'../img_assets/possible.png')
+    debug = False
 
 
 def get_cell_neighbours(r, c):
     neighbours = []
     min_r, max_r, min_c, max_c = get_shape_minmax_rowcol(r, c)
-    for row in range(min_r, max_r+1):
-        for col in range(min_c, max_c+1):
-            if row == min_r and (col == min_c or col == max_c):
+    for row in range(min_r, max_r + 1):
+        for col in range(min_c, max_c + 1):
+            if col == c and row == r:
                 continue
-            neighbours.append((row, col))
+            elif (c % 2 == 0) and ((col == c + 1 and row == r + 1) or (row == r + 1 and col == c - 1)):
+                continue
+            elif (c % 2 == 1) and ((col == c - 1 and row == r - 1) or (row == r - 1 and col == c + 1)):
+                continue
+            else:
+                neighbours.append((row, col))
     return neighbours
 
 
 def get_shape_minmax_rowcol(r, c):
-    min_r = max(r-1, 0)
-    max_r = min(r+1, board.height-1)
-    min_c = max(c-1, 0)
-    max_c = min(c+1, board.width-1)
+    min_r = max(r - 1, 0)
+    max_r = min(r + 1, board.height - 1)
+    min_c = max(c - 1, 0)
+    max_c = min(c + 1, board.width - 1)
     return min_r, max_r, min_c, max_c
 
 
@@ -194,3 +195,4 @@ def run_game():
 
 
 run_game()
+# print(get_cell_neighbours(5,6))
