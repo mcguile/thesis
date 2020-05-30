@@ -8,8 +8,8 @@ W = 'white'
 B = 'black'
 
 debug = True
-WIDTH = 900
-HEIGHT = 900
+WIDTH = 1000
+HEIGHT = 1000
 RACK_HEIGHT = 160
 
 clock = pygame.time.Clock()
@@ -18,14 +18,14 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption('Hive!')
 bg = pygame.image.load('../img_assets/wood.png')
+img_selected = pygame.image.load('../img_assets/selected.png')
 rack_top_surf = pygame.Surface((WIDTH, RACK_HEIGHT), pygame.SRCALPHA, 32).convert_alpha()
 rack_bottom_surf = pygame.Surface((WIDTH, RACK_HEIGHT), pygame.SRCALPHA, 32).convert_alpha()
 drag_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA, 32).convert_alpha()
 drag_surf_rect = drag_surf.get_rect()
+hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
+hexa_width, _ = hexa_size
 player_move = 'white'
-
-hexa_selected = None
-offset_x, offset_y = 0, 0
 
 board = Board(40, 40)
 
@@ -70,31 +70,34 @@ def setup_racks(rack, top=True):
     rack_surf = rack_top_surf if top else rack_bottom_surf
     rack_surf.fill((0, 0, 0, 0))
     for r, _ in enumerate(rack.board):
-        x = 120
+        x = int(WIDTH/6)-hexa_width/2
         y += 20
         for hexa in rack.board[r]:
             rack_surf.blit(hexa.image, (x, y))
-            size = hexa.image.get_rect().size
-            hexa.rect = pygame.Rect((x, y), size)
-            x += 150
+            hexa.rect = pygame.Rect((x, y), hexa_size)
+            x += int(WIDTH/6)
 
 
-def draw_placed_tiles():
+def draw_placed_tiles(possible_moves):
     x_o, y_o = 0, 0
     drag_surf.fill((0, 0, 0, 0))
     for r, _ in enumerate(board.board):
         x, y = x_o, y_o
         for c, hexa in enumerate(board.board[r]):
+            if type(hexa) is Blank:
+                if possible_moves and (r, c) in possible_moves:
+                    hexa.image = hexa.image_playable
+                else:
+                    hexa.image = hexa.image_o
             drag_surf.blit(hexa.image, (x, y))
-            size = hexa.image.get_rect().size
-            hexa.rect = pygame.Rect((x, y), size)
+            hexa.rect = pygame.Rect((x, y), hexa_size)
             y += 30 if c % 2 == 0 else -30
             x += 52
         y_o += 61
 
 
 def get_possible_moves_from_rack(player):
-    possible_moves = []
+    possible_moves = set()
     for r, _ in enumerate(board.board):
         for c, hexa in enumerate(board.board[r]):
             neighbours = get_cell_neighbours(r, c)
@@ -103,14 +106,10 @@ def get_possible_moves_from_rack(player):
             for x, y in neighbours:
                 if board.board[x][y].player == player:
                     found_own_tile = True
-                    # print((r,c), f'found {player} at', (x,y))
-                elif board.board[x][y].player == opp(player) or board.board[r][c].player == opp(player):
-                    # print((r,c),f'found {opp(player)} at', (x,y))
+                elif board.board[x][y].player == opp(player) or type(board.board[r][c]) != Blank:
                     valid_placement = False
             if found_own_tile and valid_placement:
-                board.board[r][c].image = pygame.image.load(f'../img_assets/possible.png')
-                possible_moves.append((r, c))
-                # print(f'placing possible at {(r,c)}')
+                possible_moves.add((r, c))
     return possible_moves
 
 
@@ -142,84 +141,106 @@ def opp(player):
     return B if player == W else W
 
 
-def draw_board():
+def draw_board(hexa_selected):
     screen.fill((0, 0, 0))
-    screen.blit(bg, (0, 0))
+    screen.blit(pygame.transform.scale(bg, (WIDTH, HEIGHT)), (0, 0))
     screen.blit(drag_surf, drag_surf_rect)
     screen.blit(rack_top_surf, (0, 0))
     screen.blit(rack_bottom_surf, (0, HEIGHT - RACK_HEIGHT))
     setup_racks(top_rack)
     setup_racks(bottom_rack, top=False)
-    get_possible_moves_from_rack(W)
-    draw_placed_tiles()
+    possible_moves = None
+    if hexa_selected:
+        possible_moves = get_possible_moves_from_rack(hexa_selected.player)
+    draw_placed_tiles(possible_moves)
 
 
-def event_handler_select_tile(event, dragging):
-    global hexa_selected
-    img_selected = pygame.image.load('../img_assets/selected.png')
-    if event.type == pygame.MOUSEBUTTONDOWN and not dragging:
-        _, y = event.pos
-        if y < RACK_HEIGHT:
-            for row in range(top_rack.width):
-                for hexa in top_rack.board[row]:
-                    if hexa.rect.collidepoint(event.pos) and type(hexa) != Blank:
-                        if hexa_selected:
-                            hexa_selected.image = pygame.image.load(hexa_selected.image_loc)
-                        hexa.image.blit(img_selected, (0, 0))
-                        hexa_selected = hexa
-        elif y > HEIGHT - RACK_HEIGHT:
-            for row in range(bottom_rack.width):
-                for hexa in bottom_rack.board[row]:
-                    x, y = event.pos
-                    y = y - HEIGHT + RACK_HEIGHT
-                    if hexa.rect.collidepoint((x, y)) and type(hexa) != Blank:
-                        if hexa_selected:
-                            hexa_selected.image = pygame.image.load(hexa_selected.image_loc)
-                        hexa.image.blit(img_selected, (0, 0))
-                        hexa_selected = hexa
-        else:
-            for row in range(board.width):
-                for hexa in board.board[row]:
-                    if hexa.rect.collidepoint(event.pos) and type(hexa) != Blank:
-                        if hexa_selected:
-                            hexa_selected.image = pygame.image.load(hexa_selected.image_loc)
-                        hexa.image.blit(img_selected, (0, 0))
-                        hexa_selected = hexa
+def valid_move():
+    # todo
+    return True
 
 
-def event_handler_board_drag(event, dragging):
-    global offset_x
-    global offset_y
-    event_handler_select_tile(event, dragging)
+def move_to_board(event, last_event_pos, hexa_sel, hexa_sel_pos):
+    if pygame.Rect(last_event_pos, hexa_size).collidepoint(event.pos):
+        hexa_sel.image = pygame.image.load(hexa_sel.image_loc)
+        return None
+    for row in range(board.width):
+        for col, hexa in enumerate(board.board[row]):
+            if hexa.rect.collidepoint(event.pos) and valid_move():
+                hexa_sel_pos[0].board[hexa_sel_pos[1][0]][hexa_sel_pos[1][1]] = Blank()
+                board.board[row][col] = hexa_sel
+                board.board[row][col].image = pygame.image.load(board.board[row][col].image_loc)
+                return None
+    return hexa_sel
 
-    if event.type == pygame.MOUSEBUTTONDOWN and not dragging and drag_surf_rect.collidepoint(event.pos):
-        dragging = True
-        mouse_x, mouse_y = event.pos
-        offset_x = drag_surf_rect.x - mouse_x
-        offset_y = drag_surf_rect.y - mouse_y
-    elif event.type == pygame.MOUSEMOTION and dragging:
-        mouse_x, mouse_y = event.pos
-        drag_surf_rect.x = mouse_x + offset_x
-        drag_surf_rect.y = mouse_y + offset_y
-    elif event.type == pygame.MOUSEBUTTONUP and dragging:
-        offset_x, offset_y = 0, 0
-        dragging = False
-    return dragging
+
+def iter_top_rack(event, hexa_sel, hexa_sel_pos):
+    for row in range(top_rack.width):
+        for col, hexa in enumerate(top_rack.board[row]):
+            if hexa.rect.collidepoint(event.pos) and type(hexa) != Blank:
+                if hexa_sel:
+                    hexa_sel.image = pygame.image.load(hexa_sel.image_loc)
+                hexa.image.blit(img_selected, (0, 0))
+                hexa_sel = hexa
+                hexa_selected_pos = (top_rack, (row, col))
+                return hexa_sel, hexa_selected_pos
+    return hexa_sel, hexa_sel_pos
+
+
+def iter_bottom_rack(event, hexa_sel, hexa_sel_pos):
+    mouse_x, mouse_y = event.pos
+    for row in range(bottom_rack.width):
+        for col, hexa in enumerate(bottom_rack.board[row]):
+            hexa.rect.y = hexa.rect.y + HEIGHT - RACK_HEIGHT
+            if hexa.rect.collidepoint((mouse_x, mouse_y)) and type(hexa) != Blank:
+                if hexa_sel:
+                    hexa_sel.image = pygame.image.load(hexa_sel.image_loc)
+                hexa.image.blit(img_selected, (0, 0))
+                hexa_sel = hexa
+                hexa_sel_pos = (bottom_rack, (row, col))
+                return hexa_sel, hexa_sel_pos
+    return hexa_sel, hexa_sel_pos
+
+
+def iter_board(event, hexa_sel, hexa_sel_pos):
+    for row in range(board.width):
+        for col, hexa in enumerate(board.board[row]):
+            if hexa.rect.collidepoint(event.pos) and type(hexa) != Blank:
+                if hexa_sel:
+                    hexa_sel.image = pygame.image.load(hexa_sel.image_loc)
+                hexa.image.blit(img_selected, (0, 0))
+                hexa_sel = hexa
+                hexa_sel_pos = (board, (row, col))
+                return hexa_sel, hexa_sel_pos
+    return hexa_sel, hexa_sel_pos
 
 
 def run_game():
-    dragging = False
+    hexa_selected = None
+    hexa_selected_pos = (None, (0, 0))
+    last_event_pos = (0, 0)
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
-            else:
-                #dragging = event_handler_board_drag(event, dragging)
-                event_handler_select_tile(event, dragging)
+            if event.type == pygame.MOUSEBUTTONUP:
+                if hexa_selected:
+                    #todo validate move is possible
+                    hexa_selected = move_to_board(event, last_event_pos, hexa_selected, hexa_selected_pos)
+                else:
+                    mouse_x, mouse_y = event.pos
+                    if mouse_y < RACK_HEIGHT:
+                        hexa_selected, hexa_selected_pos = iter_top_rack(event, hexa_selected, hexa_selected_pos)
+                    elif mouse_y > HEIGHT - RACK_HEIGHT:
+                        hexa_selected, hexa_selected_pos = iter_bottom_rack(event, hexa_selected, hexa_selected_pos)
+                    else:
+                        hexa_selected, hexa_selected_pos = iter_board(event, hexa_selected, hexa_selected_pos)
+                last_event_pos = event.pos
+                print(get_possible_moves_from_rack(B))
 
-        draw_board()
+        draw_board(hexa_selected)
         pygame.display.update()
         clock.tick(30)
 

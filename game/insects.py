@@ -99,8 +99,10 @@ class Blank:
     def __init__(self, x=0, y=0):
         self.image = pygame.image.load(f'../img_assets/blank.png')
         self.image_o = pygame.image.load(f'../img_assets/blank.png')
+        self.image_loc = '../img_assets/blank.png'
+        self.image_playable = pygame.image.load('../img_assets/possible.png')
         self.in_play = False
-        self.playable = True
+        self.playable = False
         self.player = None
         self.rect = None
         self.x = x
@@ -108,10 +110,11 @@ class Blank:
 
 
 class Possible:
-    def __init__(self, x=0, y=0):
+    def __init__(self, x=0, y=0, rect=None):
         self.image = pygame.image.load(f'../img_assets/possible.png')
-        self.image_o = pygame.image.load(f'../img_assets/possible.png')
+        self.image_loc = '../img_assets/possible.png'
         self.in_play = False
-        self.rect = None
+        self.player = None
+        self.rect = rect
         self.x = x
         self.y = y
