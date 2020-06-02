@@ -102,6 +102,7 @@ class Game:
         self.top_rack = init_rack(W)
         self.bottom_rack = init_rack(B)
         self.possible_moves = set()
+        self.mouse_pos_rect = pygame.Rect((0, 0), self.hexa_size)
 
     def setup_tiles(self):
         y = 0
@@ -185,6 +186,7 @@ class Game:
                         self.hexa_selected.image = pygame.image.load(self.hexa_selected.image_loc)
                     hexa.image.blit(self.img_selected, (0, 0))
                     self.hexa_selected = hexa
+                    self.mouse_pos_rect.x, self.mouse_pos_rect.y = event.pos
 
     def select_from_board(self, event):
         for row in range(self.board.height):
@@ -198,6 +200,7 @@ class Game:
                             self.hexa_selected.image = pygame.image.load(self.hexa_selected.image_loc)
                         hexa.image.blit(self.img_selected, (0, 0))
                         self.hexa_selected = hexa
+                        self.mouse_pos_rect.x, self.mouse_pos_rect.y = event.pos
                         return
 
     def make_move(self, row, col):
@@ -215,6 +218,7 @@ class Game:
         self.players_turn = opp(self.players_turn)
         self.turn_count += 1
         self.hexa_selected = None
+        self.possible_moves = set()
 
     def move_white_first(self, first_move, event):
         r, c = self.board.height // 2, self.board.width // 2
@@ -246,9 +250,11 @@ class Game:
                 surrounded = False
         return surrounded
 
-    def get_bee(self, player):
-        return self.get_rack(player).board[0][3]
-
+    def deselect(self):
+        self.hexa_selected.image = pygame.image.load(self.hexa_selected.image_loc)
+        self.possible_moves = set()
+        self.mouse_pos_rect.x, self.mouse_pos_rect.y = 0, 0
+        self.hexa_selected = None
 
     def run_game(self):
         game_won = False
@@ -268,7 +274,10 @@ class Game:
                 #    TODO
                 if event.type == pygame.MOUSEBUTTONUP:
                     if self.hexa_selected:
-                        self.move_to_board(event, last_event_pos)
+                        if self.mouse_pos_rect.collidepoint(event.pos):
+                            self.deselect()
+                        else:
+                            self.move_to_board(event, last_event_pos)
                     else:
                         mouse_x, mouse_y = event.pos
                         if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
