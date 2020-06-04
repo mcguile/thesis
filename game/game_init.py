@@ -37,6 +37,7 @@ def init_start_tiles():
     for i in range(2):
         x, player = (0, W) if i == 0 else (3, B)
         rack.board[0 + x][0] = Ant(player, 0 + x, 0)
+        rack.board[1 + x][0] = Ant(player, 1 + x, 0)
         rack.board[2 + x][0] = Ant(player, 2 + x, 0)
         rack.board[0 + x][1] = Beetle(player, 0 + x, 1)
         rack.board[1 + x][1] = Beetle(player, 1 + x, 1)
@@ -78,44 +79,47 @@ def get_cell_neighbours(r, c, num_rows, num_cols):
 
 
 def get_hexas_straight_line(fromm, w, h, direction=ALL):
-    hexas_ne, hexas_nw, hexas_sw, hexas_se = [], [], [], []
-    r, c = fromm
-    r_nw_se, c_nw_se = r_ne_sw, c_ne_sw = r_se_nw, c_se_nw = r_sw_ne, c_sw_ne = r, c
+    hexas_n, hexas_s, hexas_ne, hexas_se, hexas_sw, hexas_nw = [], [], [], [], [], []
+    r_n, c_n = r_s, c_s = r_se, c_se = r_sw, c_sw = r_nw, c_nw = r_ne, c_ne = fromm
     for i in range(min(w, h)):
-        if r_nw_se % 2 == 1 and c_nw_se % 2 == 1:
-            r_nw_se += 1
-            c_nw_se += 1
-            r_ne_sw += 1
-            c_ne_sw -= 1
-            c_se_nw -= 1
-            c_sw_ne += 1
-        elif r_nw_se % 2 == 1 and c_nw_se % 2 == 0:
-            c_nw_se += 1
-            c_ne_sw -= 1
-            r_se_nw -= 1
-            c_se_nw -= 1
-            r_sw_ne -= 1
-            c_sw_ne += 1
-        elif r_nw_se % 2 == 0 and c_nw_se % 2 == 0:
-            c_nw_se += 1
-            c_ne_sw -= 1
-            r_se_nw -= 1
-            c_se_nw -= 1
-            r_sw_ne -= 1
-            c_sw_ne += 1
-        else:
-            r_nw_se += 1
-            c_nw_se += 1
-            r_ne_sw += 1
-            c_ne_sw -= 1
-            c_se_nw -= 1
-            c_sw_ne += 1
-        hexas_nw.append((r_se_nw,c_se_nw))
-        hexas_ne.append((r_sw_ne, c_sw_ne))
-        hexas_sw.append((r_ne_sw, c_ne_sw))
-        hexas_se.append((r_nw_se, c_nw_se))
+        r_n -= 1
+        r_s += 1
+        if r_se % 2 == 1 and c_se % 2 == 1:
+            r_se += 1
+            c_se += 1
+            r_sw += 1
+            c_sw -= 1
+            c_nw -= 1
+            c_ne += 1
+        elif r_se % 2 == 1 and c_se % 2 == 0:
+            c_se += 1
+            c_sw -= 1
+            r_nw -= 1
+            c_nw -= 1
+            r_ne -= 1
+            c_ne += 1
+        elif r_se % 2 == 0 and c_se % 2 == 0:
+            c_se += 1
+            c_sw -= 1
+            r_nw -= 1
+            c_nw -= 1
+            r_ne -= 1
+            c_ne += 1
+        elif r_se % 2 == 0 and c_se % 2 == 1:
+            r_se += 1
+            c_se += 1
+            r_sw += 1
+            c_sw -= 1
+            c_nw -= 1
+            c_ne += 1
+        hexas_n.append((r_n, c_n))
+        hexas_s.append((r_s, c_s))
+        hexas_nw.append((r_nw,c_nw))
+        hexas_ne.append((r_ne, c_ne))
+        hexas_sw.append((r_sw, c_sw))
+        hexas_se.append((r_se, c_se))
     if direction == ALL:
-        return hexas_ne, hexas_se, hexas_sw, hexas_nw
+        return hexas_n, hexas_s, hexas_ne, hexas_se, hexas_sw, hexas_nw
     elif direction == NE:
         return hexas_ne
     elif direction == SE:
@@ -243,7 +247,9 @@ class Game:
                     continue
                 if type(self.board.board[r][c]) is not Blank:
                     for n_r, n_c in get_cell_neighbours(r, c, self.board.height, self.board.width):
-                        if type(self.board.board[n_r][n_c]) is Blank and not self.breaks_freedom_to_move_rule(n_r, n_c):
+                        if type(self.board.board[n_r][n_c]) is Blank and \
+                                not self.breaks_freedom_to_move_rule(n_r, n_c) and \
+                                self.move_wont_break_hive(n_r, n_c):
                             possible_moves.add((n_r, n_c))
         return possible_moves
 
@@ -259,15 +265,18 @@ class Game:
     def get_possible_moves_grasshopper(self):
         possible_moves = set()
         r, c = self.hexa_selected.r, self.hexa_selected.c
-        ne_moves, se_moves, sw_moves, nw_moves = get_hexas_straight_line((r, c), self.board.width, self.board.height)
-        for direction in [ne_moves, se_moves, sw_moves, nw_moves]:
+        n, s, ne, se, sw, nw = get_hexas_straight_line((r, c), self.board.width, self.board.height)
+        for direction in [n, s, ne, se, sw, nw]:
             found_bug_to_jump = False
             for r, c in direction:
                 if 0 <= r < self.board.height and 0 <= c < self.board.width:
-                    if type(self.board.board[r][c]) is not Blank:
-                        found_bug_to_jump = True
-                        continue
-                    if found_bug_to_jump and self.valid_grasshopper_move(r, c):
+                    if not found_bug_to_jump:
+                        if type(self.board.board[r][c]) is Blank:
+                            break
+                        else:
+                            found_bug_to_jump = True
+                            continue
+                    elif self.valid_grasshopper_move(r, c):
                         possible_moves.add((r, c))
                         break
         return possible_moves
@@ -383,7 +392,7 @@ class Game:
             for col, hexa in enumerate(self.start_tiles.board[row]):
                 if type(hexa) is not Blank:
                     count += 1
-        return count < 10
+        return count < 11
 
     def is_bee_placed(self, player):
         if player == W:
@@ -446,9 +455,12 @@ class Game:
                             self.select_from_board(event)
 
                         if self.hexa_selected:
+                            print(move_from.height)
                             if first_move_black:
+                                print(1)
                                 self.possible_moves = self.get_possible_first_moves_black()
-                            elif move_from == self.start_tiles:
+                            elif move_from.height <= 6:
+                                print(True)
                                 self.possible_moves = self.get_possible_moves_from_rack()
                             else:
                                 self.possible_moves = self.get_possible_moves_from_board()
