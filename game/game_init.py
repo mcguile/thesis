@@ -7,7 +7,11 @@ from count_hives import HiveGraph
 
 W = 'white'
 B = 'black'
-
+NW = 'North-West'
+NE = 'North-East'
+SE = 'South-East'
+SW = 'South-West'
+ALL = "All"
 
 def init_board(rows, cols):
     return Board(rows, cols)
@@ -73,6 +77,54 @@ def get_cell_neighbours(r, c, num_rows, num_cols):
     return neighbours
 
 
+def get_hexas_straight_line(fromm, w, h, direction=ALL):
+    hexas_ne, hexas_nw, hexas_sw, hexas_se = [], [], [], []
+    r, c = fromm
+    r_nw_se, c_nw_se = r_ne_sw, c_ne_sw = r_se_nw, c_se_nw = r_sw_ne, c_sw_ne = r, c
+    for i in range(min(w, h)):
+        if r_nw_se % 2 == 1 and c_nw_se % 2 == 1:
+            r_nw_se += 1
+            c_nw_se += 1
+            r_ne_sw += 1
+            c_ne_sw -= 1
+            c_se_nw -= 1
+            c_sw_ne += 1
+        elif r_nw_se % 2 == 1 and c_nw_se % 2 == 0:
+            c_nw_se += 1
+            c_ne_sw -= 1
+            r_se_nw -= 1
+            c_se_nw -= 1
+            r_sw_ne -= 1
+            c_sw_ne += 1
+        elif r_nw_se % 2 == 0 and c_nw_se % 2 == 0:
+            c_nw_se += 1
+            c_ne_sw -= 1
+            r_se_nw -= 1
+            c_se_nw -= 1
+            r_sw_ne -= 1
+            c_sw_ne += 1
+        else:
+            r_nw_se += 1
+            c_nw_se += 1
+            r_ne_sw += 1
+            c_ne_sw -= 1
+            c_se_nw -= 1
+            c_sw_ne += 1
+        hexas_nw.append((r_se_nw,c_se_nw))
+        hexas_ne.append((r_sw_ne, c_sw_ne))
+        hexas_sw.append((r_ne_sw, c_ne_sw))
+        hexas_se.append((r_nw_se, c_nw_se))
+    if direction == ALL:
+        return hexas_ne, hexas_se, hexas_sw, hexas_nw
+    elif direction == NE:
+        return hexas_ne
+    elif direction == SE:
+        return hexas_se
+    elif direction == SW:
+        return hexas_sw
+    else:
+        return hexas_nw
+
 class Game:
     def __init__(self):
         pygame.display.set_caption('Hive!')
@@ -135,36 +187,94 @@ class Game:
                 x += 52
             y_o += 60
 
-    def get_possible_moves_from_board(self):
+    def breaks_freedom_to_move_rule(self, r, c):
+        """
+        Does the hex attempted to be moved to have 5 or more pieces around it?
+        'Freedom to move' rule.
+        :return: boolean
+        """
+        neighbours = get_cell_neighbours(r, c, self.board.height, self.board.width)
+        count_pieces = 0
+        for n in neighbours:
+            if type(n) != Blank:
+                count_pieces += 1
+        return count_pieces >= 5
+
+    def move_wont_break_hive(self, r, c):
+        """
+        Check if moving piece causes break in hive.
+        Hive check needs to be through entire movement of a piece.
+        i.e. if the hive is ever broken by either lifting the piece
+        of by placing the piece somewhere detached from the hive
+        :param r:
+        :param c:
+        :return:
+        """
+        tmp = type(self.hexa_selected)(
+            row=self.hexa_selected.r, col=self.hexa_selected.c,
+            player=self.hexa_selected.player, image=self.hexa_selected.image)
+        self.board.board[self.hexa_selected.r][self.hexa_selected.c] = Blank()
+        hives1stcheck = HiveGraph(self.board).count_hives()
+        self.board.board[r][c] = tmp
+        hives2ndcheck = HiveGraph(self.board).count_hives()
+        self.board.board[tmp.r][tmp.c] = tmp
+        self.hexa_selected = tmp
+        self.board.board[r][c] = Blank()
+        return hives1stcheck == hives2ndcheck == 1
+
+    def get_possible_moves_bee(self):
         possible_moves = set()
-        neighbours_selected = get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height,
-                                                  self.board.width)
-        for r, c in neighbours_selected:
-            valid_placement = True
-            neighbours_of_ns = get_cell_neighbours(r, c, self.board.height, self.board.width)
-            for xr, yc in neighbours_of_ns:
-                if self.board.board[xr][yc].player == opp(self.players_turn):
-                    valid_placement = False
-            if type(self.board.board[r][c]) is Blank and valid_placement:
-                # Check if moving piece causes break in hive
-                # Hive check needs to be through entire movement of a piece.
-                # i.e. if the hive is *ever* broken by either lifting the piece
-                # of by placing the piece somewhere detached from the hive
-                tmp = type(self.hexa_selected)(
-                    row=self.hexa_selected.r, col=self.hexa_selected.c, player=self.hexa_selected.player,
-                    image=self.hexa_selected.image)
-                self.board.board[self.hexa_selected.r][self.hexa_selected.c] = Blank()
-                hives1stcheck = HiveGraph(self.board).count_hives()
-                self.board.board[r][c] = tmp
-                hives2ndcheck = HiveGraph(self.board).count_hives()
-                self.board.board[tmp.r][tmp.c] = tmp
-                self.hexa_selected = tmp
-                self.board.board[r][c] = Blank()
-                # End check
-                print((self.hexa_selected.r, self.hexa_selected.c), (r,c), hives1stcheck, hives2ndcheck)
-                if hives1stcheck == hives2ndcheck == 1:
+        neighbours_of_selected = get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height,
+                                                     self.board.width)
+        for r, c in neighbours_of_selected:
+            if type(self.board.board[r][c]) is Blank:
+                if self.move_wont_break_hive(r, c):
                     possible_moves.add((r, c))
         return possible_moves
+
+    def get_possible_moves_spider(self):
+        pass
+
+    def get_possible_moves_ant(self):
+        pass
+
+    def get_possible_moves_beetle(self):
+        pass
+
+    def valid_grasshopper_move(self, r, c):
+        return (type(self.board.board[r][c]) is Blank and
+                (r, c) not in get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c,
+                                                  self.board.height, self.board.width) and
+                self.move_wont_break_hive(r, c))
+
+    def get_possible_moves_grasshopper(self):
+        possible_moves = set()
+        r, c = self.hexa_selected.r, self.hexa_selected.c
+        ne_moves, se_moves, sw_moves, nw_moves = get_hexas_straight_line((r, c), self.board.width, self.board.height)
+        for direction in [ne_moves, se_moves, sw_moves, nw_moves]:
+            found_bug_to_jump = False
+            for r, c in direction:
+                if 0 <= r < self.board.height and 0 <= c < self.board.width:
+                    if type(self.board.board[r][c]) is not Blank:
+                        found_bug_to_jump = True
+                        continue
+                    if found_bug_to_jump and self.valid_grasshopper_move(r, c):
+                        possible_moves.add((r, c))
+                        break
+        return possible_moves
+
+    def get_possible_moves_from_board(self):
+        t = type(self.hexa_selected)
+        if t == Bee:
+            return self.get_possible_moves_bee()
+        elif t == Spider:
+            return self.get_possible_moves_bee()
+        elif t == Ant:
+            return self.get_possible_moves_bee()
+        elif t == Beetle:
+            return self.get_possible_moves_bee()
+        else:
+            return self.get_possible_moves_grasshopper()
 
     def get_possible_moves_from_rack(self):
         possible_moves = set()
@@ -339,5 +449,37 @@ class Game:
             self.clock.tick(30)
 
 
+def get_possible_moves_grasshopper():
+    possible_moves = list()
+    # diagonals = set()
+    r_nw_se, c_nw_se = 8, 7
+    r_ne_sw, c_ne_sw = 8, 7
+    for i in range(min(16, 16)):
+        if r_nw_se % 2 == 1 and c_nw_se % 2 == 1:
+            c_nw_se += 1
+            c_ne_sw -= 1
+        elif r_nw_se % 2 == 1 and c_nw_se % 2 == 0:
+            r_nw_se += 1
+            c_nw_se += 1
+            r_ne_sw += 1
+            c_ne_sw -= 1
+        elif r_nw_se % 2 == 0 and c_nw_se % 2 == 0:
+            r_nw_se += 1
+            c_nw_se += 1
+            r_ne_sw += 1
+            c_ne_sw -= 1
+        else:
+            c_nw_se += 1
+            c_ne_sw -= 1
+        if 0 <= r_nw_se < 16 and 0 <= c_nw_se < 16:
+            possible_moves.append((r_nw_se, c_nw_se))
+        if 0 <= r_ne_sw < 16 and 0 <= c_ne_sw < 16:
+            possible_moves.append((r_ne_sw, c_ne_sw))
+        # diagonals.add((r_nw_se, c_nw_se))
+        # diagonals.add((r_ne_sw, c_ne_sw))
+    return possible_moves
+
+
 game = Game()
 game.run_game()
+# print(get_possible_moves_grasshopper())
