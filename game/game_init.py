@@ -195,8 +195,8 @@ class Game:
         """
         neighbours = get_cell_neighbours(r, c, self.board.height, self.board.width)
         count_pieces = 0
-        for n in neighbours:
-            if type(n) != Blank:
+        for r, c in neighbours:
+            if type(self.board.board[r][c]) != Blank:
                 count_pieces += 1
         return count_pieces >= 5
 
@@ -236,7 +236,16 @@ class Game:
         pass
 
     def get_possible_moves_ant(self):
-        pass
+        possible_moves = set()
+        for r, _ in enumerate(self.board.board):
+            for c, hexa in enumerate(self.board.board[r]):
+                if (r, c) == (self.hexa_selected.r, self.hexa_selected.c):
+                    continue
+                if type(self.board.board[r][c]) is not Blank:
+                    for n_r, n_c in get_cell_neighbours(r, c, self.board.height, self.board.width):
+                        if type(self.board.board[n_r][n_c]) is Blank and not self.breaks_freedom_to_move_rule(n_r, n_c):
+                            possible_moves.add((n_r, n_c))
+        return possible_moves
 
     def get_possible_moves_beetle(self):
         pass
@@ -270,7 +279,7 @@ class Game:
         elif t == Spider:
             return self.get_possible_moves_bee()
         elif t == Ant:
-            return self.get_possible_moves_bee()
+            return self.get_possible_moves_ant()
         elif t == Beetle:
             return self.get_possible_moves_bee()
         else:
@@ -449,37 +458,5 @@ class Game:
             self.clock.tick(30)
 
 
-def get_possible_moves_grasshopper():
-    possible_moves = list()
-    # diagonals = set()
-    r_nw_se, c_nw_se = 8, 7
-    r_ne_sw, c_ne_sw = 8, 7
-    for i in range(min(16, 16)):
-        if r_nw_se % 2 == 1 and c_nw_se % 2 == 1:
-            c_nw_se += 1
-            c_ne_sw -= 1
-        elif r_nw_se % 2 == 1 and c_nw_se % 2 == 0:
-            r_nw_se += 1
-            c_nw_se += 1
-            r_ne_sw += 1
-            c_ne_sw -= 1
-        elif r_nw_se % 2 == 0 and c_nw_se % 2 == 0:
-            r_nw_se += 1
-            c_nw_se += 1
-            r_ne_sw += 1
-            c_ne_sw -= 1
-        else:
-            c_nw_se += 1
-            c_ne_sw -= 1
-        if 0 <= r_nw_se < 16 and 0 <= c_nw_se < 16:
-            possible_moves.append((r_nw_se, c_nw_se))
-        if 0 <= r_ne_sw < 16 and 0 <= c_ne_sw < 16:
-            possible_moves.append((r_ne_sw, c_ne_sw))
-        # diagonals.add((r_nw_se, c_nw_se))
-        # diagonals.add((r_ne_sw, c_ne_sw))
-    return possible_moves
-
-
 game = Game()
 game.run_game()
-# print(get_possible_moves_grasshopper())
