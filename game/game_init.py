@@ -139,25 +139,30 @@ class Game:
         possible_moves = set()
         neighbours_selected = get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height,
                                                   self.board.width)
-        valid_placement = True
         for r, c in neighbours_selected:
+            valid_placement = True
             neighbours_of_ns = get_cell_neighbours(r, c, self.board.height, self.board.width)
             for xr, yc in neighbours_of_ns:
                 if self.board.board[xr][yc].player == opp(self.players_turn):
                     valid_placement = False
             if type(self.board.board[r][c]) is Blank and valid_placement:
-                # Check if moving piece to this location causes break in hive
+                # Check if moving piece causes break in hive
+                # Hive check needs to be through entire movement of a piece.
+                # i.e. if the hive is *ever* broken by either lifting the piece
+                # of by placing the piece somewhere detached from the hive
                 tmp = type(self.hexa_selected)(
                     row=self.hexa_selected.r, col=self.hexa_selected.c, player=self.hexa_selected.player,
                     image=self.hexa_selected.image)
                 self.board.board[self.hexa_selected.r][self.hexa_selected.c] = Blank()
+                hives1stcheck = HiveGraph(self.board).count_hives()
                 self.board.board[r][c] = tmp
-                hives = HiveGraph(self.board).count_hives()
-                self.board.board[self.hexa_selected.r][self.hexa_selected.c] = tmp
+                hives2ndcheck = HiveGraph(self.board).count_hives()
+                self.board.board[tmp.r][tmp.c] = tmp
                 self.hexa_selected = tmp
                 self.board.board[r][c] = Blank()
                 # End check
-                if hives == 1:
+                print((self.hexa_selected.r, self.hexa_selected.c), (r,c), hives1stcheck, hives2ndcheck)
+                if hives1stcheck == hives2ndcheck == 1:
                     possible_moves.add((r, c))
         return possible_moves
 
