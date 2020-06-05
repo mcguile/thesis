@@ -152,8 +152,8 @@ class Game:
         self.hexa_width, self.hexa_height = self.hexa_size
         self.players_turn = W
         self.bee_placed_white, self.bee_placed_black = False, False
-        self.bee_pos_black, self.bee_pos_white = (0, 3), (0, 3)
-        self.turn_count = 0
+        self.bee_pos_white, self.bee_pos_black = (0, 3), (3, 3)
+        self.turn_count_white, self.turn_count_black = 0, 0
         self.hexa_selected = None
         self.board = init_board(16, 16)
         self.start_tiles = init_start_tiles()
@@ -344,17 +344,17 @@ class Game:
                     self.make_move(row, col, fromm)
                     return
 
-    def select_from_rack_tiles(self, event):
+    def select_from_rack_tiles(self, mouse_pos):
         start, stop = (0, self.start_tiles.height // 2) if self.players_turn == W else (
             self.start_tiles.height // 2, self.start_tiles.height)
         for row in range(start, stop):
             for col, hexa in enumerate(self.start_tiles.board[row]):
-                if type(hexa) is not Blank and hexa.rect.collidepoint(event.pos):
+                if type(hexa) is not Blank and hexa.rect.collidepoint(mouse_pos):
                     if self.hexa_selected:
                         self.hexa_selected.image = pygame.image.load(self.hexa_selected.image_loc)
                     hexa.image.blit(self.img_selected, (0, 0))
                     self.hexa_selected = hexa
-                    self.mouse_pos.x, self.mouse_pos.y = np.subtract(event.pos, (self.hexa_width // 2,
+                    self.mouse_pos.x, self.mouse_pos.y = np.subtract(mouse_pos, (self.hexa_width // 2,
                                                                                  self.hexa_height // 2))
 
     def select_from_board(self, event):
@@ -408,12 +408,12 @@ class Game:
             if type(self.hexa_selected) == Bee:
                 if self.players_turn == W:
                     self.bee_placed_white = True
-                    self.bee_pos_white = [self.hexa_selected.r, self.hexa_selected.c]
+                    self.bee_pos_white = [to_row, to_col]
                 else:
                     self.bee_placed_black = True
-                    self.bee_pos_black = [self.hexa_selected.r, self.hexa_selected.c]
+                    self.bee_pos_black = [to_row, to_col]
+        self.increment_turn_count()
         self.players_turn = opp(self.players_turn)
-        self.turn_count += 1
         self.hexa_selected = None
         self.possible_moves = set()
 
@@ -456,6 +456,12 @@ class Game:
                 surrounded = False
         return surrounded
 
+    def increment_turn_count(self):
+        if self.players_turn == W:
+            self.turn_count_white += 1
+        else:
+            self.turn_count_black += 1
+
     def deselect(self):
         self.hexa_selected.image = pygame.image.load(self.hexa_selected.image_loc)
         self.possible_moves = set()
@@ -488,12 +494,16 @@ class Game:
                                 first_move_black = False
                     else:
                         mouse_x, mouse_y = event.pos
+                        if self.turn_count_white == 3 and self.players_turn == W:
+                            mouse_x, mouse_y = self.start_tiles.board[0][3].rect.centerx, self.start_tiles.board[0][3].rect.centery
+                        elif self.turn_count_black == 3 and self.players_turn == B:
+                            mouse_x, mouse_y = self.start_tiles.board[3][3].rect.centerx, self.start_tiles.board[3][3].rect.centery
                         if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
                             move_from = self.start_tiles
                             if first_move_white:
                                 first_move_white = self.move_white_first(first_move_white, event)
                             else:
-                                self.select_from_rack_tiles(event)
+                                self.select_from_rack_tiles((mouse_x, mouse_y))
                         else:
                             move_from = self.board
                             self.select_from_board(event)
