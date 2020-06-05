@@ -216,6 +216,8 @@ class Game:
         :param c:
         :return:
         """
+        if type(self.board.board[r][c]) is not Blank:
+            return True
         if type(self.hexa_selected) is Stack:
             tmp = Stack(stack=self.hexa_selected.stack, row=self.hexa_selected.r, col=self.hexa_selected.c)
         else:
@@ -259,7 +261,11 @@ class Game:
         return possible_moves
 
     def get_possible_moves_beetle(self):
-        return set(get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height, self.board.width))
+        possible_moves = set()
+        for r, c in get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height, self.board.width):
+            if self.move_wont_break_hive(r, c):
+                possible_moves.add((r, c))
+        return possible_moves
 
     def valid_grasshopper_move(self, r, c):
         return (type(self.board.board[r][c]) is Blank and
