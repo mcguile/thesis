@@ -445,6 +445,8 @@ class Game:
             return self.bee_placed_black
 
     def isGameOver(self):
+        if not self.is_bee_placed(W) or not self.is_bee_placed(B):
+            return False
         surrounded = True
         if opp(self.players_turn) == W:
             bee_pos = self.bee_pos_black
@@ -469,52 +471,47 @@ class Game:
         self.hexa_selected = None
 
     def run_game(self):
-        game_won = False
         first_move_white = True
         first_move_black = True
         move_from = None
-        while not game_won:
+        while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
 
-                if self.is_bee_placed(W) and self.is_bee_placed(B) and self.isGameOver():
-                    game_won = True
-
-                # if turn_count == 3 and not is_bee_placed(players_turn):
-                #    TODO
-                if event.type == pygame.MOUSEBUTTONUP:
-                    if self.hexa_selected:
-                        if self.mouse_pos.collidepoint(event.pos):
-                            self.deselect()
-                        else:
-                            self.move_to_board(event, move_from)
-                            if first_move_black and self.black_has_moved():
-                                first_move_black = False
-                    else:
-                        mouse_x, mouse_y = event.pos
-                        if self.turn_count_white == 3 and self.players_turn == W:
-                            mouse_x, mouse_y = self.start_tiles.board[0][3].rect.centerx, self.start_tiles.board[0][3].rect.centery
-                        elif self.turn_count_black == 3 and self.players_turn == B:
-                            mouse_x, mouse_y = self.start_tiles.board[3][3].rect.centerx, self.start_tiles.board[3][3].rect.centery
-                        if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
-                            move_from = self.start_tiles
-                            if first_move_white:
-                                first_move_white = self.move_white_first(first_move_white, event)
-                            else:
-                                self.select_from_rack_tiles((mouse_x, mouse_y))
-                        else:
-                            move_from = self.board
-                            self.select_from_board(event)
-
+                if not self.isGameOver():
+                    if event.type == pygame.MOUSEBUTTONUP:
                         if self.hexa_selected:
-                            if first_move_black:
-                                self.possible_moves = self.get_possible_first_moves_black()
-                            elif move_from.height <= 6:
-                                self.possible_moves = self.get_possible_moves_from_rack()
+                            if self.mouse_pos.collidepoint(event.pos):
+                                self.deselect()
                             else:
-                                self.possible_moves = self.get_possible_moves_from_board()
+                                self.move_to_board(event, move_from)
+                                if first_move_black and self.black_has_moved():
+                                    first_move_black = False
+                        else:
+                            mouse_x, mouse_y = event.pos
+                            if self.turn_count_white == 3 and self.players_turn == W and not self.is_bee_placed(W):
+                                mouse_x, mouse_y = self.start_tiles.board[0][3].rect.centerx, self.start_tiles.board[0][3].rect.centery
+                            elif self.turn_count_black == 3 and self.players_turn == B and not self.is_bee_placed(B):
+                                mouse_x, mouse_y = self.start_tiles.board[3][3].rect.centerx, self.start_tiles.board[3][3].rect.centery
+                            if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
+                                move_from = self.start_tiles
+                                if first_move_white:
+                                    first_move_white = self.move_white_first(first_move_white, event)
+                                else:
+                                    self.select_from_rack_tiles((mouse_x, mouse_y))
+                            else:
+                                move_from = self.board
+                                self.select_from_board(event)
+
+                            if self.hexa_selected:
+                                if first_move_black:
+                                    self.possible_moves = self.get_possible_first_moves_black()
+                                elif move_from.height <= 6:
+                                    self.possible_moves = self.get_possible_moves_from_rack()
+                                else:
+                                    self.possible_moves = self.get_possible_moves_from_board()
 
             self.draw_board()
             pygame.display.update()
