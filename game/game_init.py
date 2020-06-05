@@ -243,7 +243,30 @@ class Game:
         return possible_moves
 
     def get_possible_moves_spider(self):
-        pass
+        # Spider must move three spaces and only three spaces.
+        # Logic is to iterate nested three times for each hexagon
+        # in a set of neighbours that are blank and dont break the hive.
+        possible_moves = set()
+        n1_of_spider = get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height,
+                                           self.board.width)
+        for r1, c1 in n1_of_spider:
+            if type(self.board.board[r1][c1]) is Blank:
+                if self.move_wont_break_hive(r1, c1) and not self.breaks_freedom_to_move_rule(r1, c1):
+                    n2_of_spider = get_cell_neighbours(r1, c1, self.board.height, self.board.width)
+                    for r2, c2 in n2_of_spider:
+                        if r2 == r1 and c2 == c1:
+                            continue
+                        if type(self.board.board[r2][c2]) is Blank:
+                            if self.move_wont_break_hive(r2, c2) and not self.breaks_freedom_to_move_rule(r2, c2):
+                                n3_of_spider = get_cell_neighbours(r2, c2, self.board.height, self.board.width)
+                                for r3, c3 in n3_of_spider:
+                                    if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
+                                        continue
+                                    if type(self.board.board[r3][c3]) is Blank:
+                                        if self.move_wont_break_hive(r3, c3) and not self.breaks_freedom_to_move_rule(
+                                                r3, c3):
+                                            possible_moves.add((r3, c3))
+        return possible_moves
 
     def get_possible_moves_ant(self):
         possible_moves = set()
@@ -297,7 +320,7 @@ class Game:
         if t == Bee:
             return self.get_possible_moves_bee()
         elif t == Spider:
-            return self.get_possible_moves_bee()
+            return self.get_possible_moves_spider()
         elif t == Ant:
             return self.get_possible_moves_ant()
         elif t == Beetle or t == Stack:
