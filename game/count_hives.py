@@ -48,7 +48,7 @@ class HiveGraph:
         for row in range(self.ROW):
             for col in range(self.COL):
                 # If a hexagon not Blank and is not visited yet,
-                # then new island found
+                # then new hive found
                 if not visited[row][col] and type(self.graph[row][col]) != Blank:
                     # Visit all hexagons in this hive
                     # and increment hive count
