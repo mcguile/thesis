@@ -147,7 +147,7 @@ class Game:
                                                32).convert_alpha()
         self.drag_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA, 32).convert_alpha()
         self.drag_surf_rect = self.drag_surf.get_rect()
-        self.drag_surf_rect.x += 23  # Center first piece
+        #self.drag_surf_rect.x += 23  # Center first piece on screen (Commented for now as it affects click pos)
         self.hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
         self.hexa_width, self.hexa_height = self.hexa_size
         self.players_turn = W
