@@ -1,4 +1,3 @@
-import pygame
 import sys
 from pygame.locals import *
 from insects import *
@@ -142,12 +141,12 @@ class Game:
         self.bg = pygame.image.load('../img_assets/wood.jpg')
         self.img_selected = pygame.image.load('../img_assets/selected.png')
         self.rack_top_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
-                                            32).convert_alpha()
+                                            32)
         self.rack_bottom_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
-                                               32).convert_alpha()
-        self.drag_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA, 32).convert_alpha()
+                                               32)
+        self.drag_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA, 32)
         self.drag_surf_rect = self.drag_surf.get_rect()
-        #self.drag_surf_rect.x += 23  # Center first piece on screen (Commented for now as it affects click pos)
+        # self.drag_surf_rect.x += 23  # Center first piece on screen (Commented for now as it affects click pos)
         self.hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
         self.hexa_width, self.hexa_height = self.hexa_size
         self.players_turn = W
@@ -262,7 +261,8 @@ class Game:
 
     def get_possible_moves_beetle(self):
         possible_moves = set()
-        for r, c in get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height, self.board.width):
+        for r, c in get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height,
+                                        self.board.width):
             if self.move_wont_break_hive(r, c):
                 possible_moves.add((r, c))
         return possible_moves
@@ -301,8 +301,6 @@ class Game:
         elif t == Ant:
             return self.get_possible_moves_ant()
         elif t == Beetle or t == Stack:
-            if t == Stack:
-                print(self.hexa_selected.stack)
             return self.get_possible_moves_beetle()
         else:
             return self.get_possible_moves_grasshopper()
@@ -492,9 +490,11 @@ class Game:
                         else:
                             mouse_x, mouse_y = event.pos
                             if self.turn_count_white == 3 and self.players_turn == W and not self.is_bee_placed(W):
-                                mouse_x, mouse_y = self.start_tiles.board[0][3].rect.centerx, self.start_tiles.board[0][3].rect.centery
+                                mouse_x, mouse_y = self.start_tiles.board[0][3].rect.centerx, self.start_tiles.board[0][
+                                    3].rect.centery
                             elif self.turn_count_black == 3 and self.players_turn == B and not self.is_bee_placed(B):
-                                mouse_x, mouse_y = self.start_tiles.board[3][3].rect.centerx, self.start_tiles.board[3][3].rect.centery
+                                mouse_x, mouse_y = self.start_tiles.board[3][3].rect.centerx, self.start_tiles.board[3][
+                                    3].rect.centery
                             if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
                                 move_from = self.start_tiles
                                 if first_move_white:
