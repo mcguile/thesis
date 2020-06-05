@@ -70,3 +70,27 @@ class Blank:
         self.rect = None
         self.r = row
         self.c = col
+
+
+class Stack:
+    def __init__(self, first_piece=None, stacked_piece=None, stack=None, row=0, col=0):
+        self.stack = [first_piece, stacked_piece] if not stack else stack
+        self.image_loc = self.stack[-1].image_loc
+        self.image = pygame.image.load(self.image_loc)
+        self.player = self.stack[-1].player
+        self.r = row
+        self.c = col
+        self.rect = None
+
+    def add_piece(self, piece):
+        self.stack.append(piece)
+        self.image = pygame.image.load(self.stack[-1].image_loc)
+        self.player = self.stack[-1].player
+        self.stack[-1].r = self.r
+        self.stack[-1].c = self.c
+
+    def remove_piece(self):
+        piece = self.stack.pop()
+        self.image = pygame.image.load(self.stack[-1].image_loc)
+        self.player = self.stack[-1].player
+        return piece

@@ -13,6 +13,7 @@ SE = 'South-East'
 SW = 'South-West'
 ALL = "All"
 
+
 def init_board(rows, cols):
     return Board(rows, cols)
 
@@ -114,7 +115,7 @@ def get_hexas_straight_line(fromm, w, h, direction=ALL):
             c_ne += 1
         hexas_n.append((r_n, c_n))
         hexas_s.append((r_s, c_s))
-        hexas_nw.append((r_nw,c_nw))
+        hexas_nw.append((r_nw, c_nw))
         hexas_ne.append((r_ne, c_ne))
         hexas_sw.append((r_sw, c_sw))
         hexas_se.append((r_se, c_se))
@@ -128,6 +129,7 @@ def get_hexas_straight_line(fromm, w, h, direction=ALL):
         return hexas_sw
     else:
         return hexas_nw
+
 
 class Game:
     def __init__(self):
@@ -214,9 +216,12 @@ class Game:
         :param c:
         :return:
         """
-        tmp = type(self.hexa_selected)(
-            row=self.hexa_selected.r, col=self.hexa_selected.c,
-            player=self.hexa_selected.player, image=self.hexa_selected.image)
+        if type(self.hexa_selected) is Stack:
+            tmp = Stack(stack=self.hexa_selected.stack, row=self.hexa_selected.r, col=self.hexa_selected.c)
+        else:
+            tmp = type(self.hexa_selected)(
+                row=self.hexa_selected.r, col=self.hexa_selected.c,
+                player=self.hexa_selected.player, image=self.hexa_selected.image)
         self.board.board[self.hexa_selected.r][self.hexa_selected.c] = Blank()
         hives1stcheck = HiveGraph(self.board).count_hives()
         self.board.board[r][c] = tmp
@@ -254,7 +259,7 @@ class Game:
         return possible_moves
 
     def get_possible_moves_beetle(self):
-        pass
+        return set(get_cell_neighbours(self.hexa_selected.r, self.hexa_selected.c, self.board.height, self.board.width))
 
     def valid_grasshopper_move(self, r, c):
         return (type(self.board.board[r][c]) is Blank and
@@ -289,8 +294,10 @@ class Game:
             return self.get_possible_moves_bee()
         elif t == Ant:
             return self.get_possible_moves_ant()
-        elif t == Beetle:
-            return self.get_possible_moves_bee()
+        elif t == Beetle or t == Stack:
+            if t == Stack:
+                print(self.hexa_selected.stack)
+            return self.get_possible_moves_beetle()
         else:
             return self.get_possible_moves_grasshopper()
 
@@ -356,18 +363,49 @@ class Game:
                                                                                  self.hexa_height // 2))
                     return
 
-    def make_move(self, row, col, fromm):
-        fromm.board[self.hexa_selected.r][self.hexa_selected.c] = Blank()
-        self.board.board[row][col] = self.hexa_selected
-        self.board.board[row][col].r, self.board.board[row][col].c = row, col
-        self.board.board[row][col].image = pygame.image.load(self.board.board[row][col].image_loc)
-        if type(self.hexa_selected) == Bee:
-            if self.players_turn == W:
-                self.bee_placed_white = True
-                self.bee_pos_white = [self.hexa_selected.r, self.hexa_selected.c]
+    def make_move(self, to_row, to_col, fromm_board):
+        f_row, f_col = self.hexa_selected.r, self.hexa_selected.c
+        dest_t = type(self.board.board[to_row][to_col])
+        if dest_t is not Blank:
+            # Must be a beetle
+            # Check if selected is just a beetle or a stack
+            if type(self.hexa_selected) is Stack:
+                beetle = self.hexa_selected.remove_piece()
+                if len(self.hexa_selected.stack) == 1:
+                    fromm_board.board[f_row][f_col] = self.hexa_selected.stack[0]
+                else:
+                    fromm_board.board[f_row][f_col] = self.hexa_selected
+                self.hexa_selected = beetle
             else:
-                self.bee_placed_black = True
-                self.bee_pos_black = [self.hexa_selected.r, self.hexa_selected.c]
+                fromm_board.board[f_row][f_col] = Blank()
+            # Create stack or append to the stack
+            if dest_t is Stack:
+                self.board.board[to_row][to_col].add_piece(self.hexa_selected)
+            else:
+                self.board.board[to_row][to_col] = Stack(first_piece=self.board.board[to_row][to_col],
+                                                         stacked_piece=self.hexa_selected,
+                                                         row=to_row, col=to_col)
+
+        else:
+            if type(fromm_board.board[f_row][f_col]) is not Stack:
+                fromm_board.board[f_row][f_col] = Blank()
+            else:
+                beetle = self.hexa_selected.remove_piece()
+                if len(self.hexa_selected.stack) == 1:
+                    fromm_board.board[f_row][f_col] = self.hexa_selected.stack[0]
+                else:
+                    fromm_board.board[f_row][f_col] = self.hexa_selected
+                self.hexa_selected = beetle
+            self.board.board[to_row][to_col] = self.hexa_selected
+            self.board.board[to_row][to_col].r, self.board.board[to_row][to_col].c = to_row, to_col
+            self.board.board[to_row][to_col].image = pygame.image.load(self.board.board[to_row][to_col].image_loc)
+            if type(self.hexa_selected) == Bee:
+                if self.players_turn == W:
+                    self.bee_placed_white = True
+                    self.bee_pos_white = [self.hexa_selected.r, self.hexa_selected.c]
+                else:
+                    self.bee_placed_black = True
+                    self.bee_pos_black = [self.hexa_selected.r, self.hexa_selected.c]
         self.players_turn = opp(self.players_turn)
         self.turn_count += 1
         self.hexa_selected = None
@@ -455,12 +493,9 @@ class Game:
                             self.select_from_board(event)
 
                         if self.hexa_selected:
-                            print(move_from.height)
                             if first_move_black:
-                                print(1)
                                 self.possible_moves = self.get_possible_first_moves_black()
                             elif move_from.height <= 6:
-                                print(True)
                                 self.possible_moves = self.get_possible_moves_from_rack()
                             else:
                                 self.possible_moves = self.get_possible_moves_from_board()
