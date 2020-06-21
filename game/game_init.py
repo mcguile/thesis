@@ -1,15 +1,14 @@
 import sys
 from pygame.locals import *
 import pygame
-from insects import *
 from board import *
-from action import Action
 from state import State
 from game_logic import *
-from mcts import mcts
+from mcts import MCTS
+import numpy as np
 
-W = 'white'
-B = 'black'
+W = -1
+B = 1
 NW = 'North-West'
 NE = 'North-East'
 SE = 'South-East'
@@ -18,16 +17,17 @@ ALL = "All"
 
 
 def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=False):
+    p = 'white' if player == -1 else 'black'
     if insect_id == 0:
-        img = pygame.image.load(f'../img_assets/{player}_bee.png')
+        img = pygame.image.load(f'../img_assets/{p}_bee.png')
     elif insect_id == 1:
-        img = pygame.image.load(f'../img_assets/{player}_ant.png')
+        img = pygame.image.load(f'../img_assets/{p}_ant.png')
     elif insect_id == 2:
-        img = pygame.image.load(f'../img_assets/{player}_beetle.png')
+        img = pygame.image.load(f'../img_assets/{p}_beetle.png')
     elif insect_id == 3:
-        img = pygame.image.load(f'../img_assets/{player}_grasshopper.png')
+        img = pygame.image.load(f'../img_assets/{p}_grasshopper.png')
     elif insect_id == 4:
-        img = pygame.image.load(f'../img_assets/{player}_spider.png')
+        img = pygame.image.load(f'../img_assets/{p}_spider.png')
     else:
         img = pygame.image.load(f'../img_assets/blank.png')
 
@@ -41,7 +41,6 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
 class Game:
     def __init__(self):
         """User Interface ATTR START"""
-        pygame.display.set_caption('Hive!')
         self.pixel_width = 1000
         self.pixel_height = 1000
         self.rack_pixel_height = 160
@@ -61,9 +60,6 @@ class Game:
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         """User Interface ATTR END"""
         self.state = State()
-        self.player_can_move_checked = False
-        self.player_can_move = True
-        self.prev_player = W
 
     def draw_rack_tiles(self):
         y = 0
@@ -153,16 +149,24 @@ class Game:
 
                 if not isGameOver(self.state):
                     if event.type == pygame.KEYDOWN:
-                        if event.key == K_LEFT:
-                            mcts_ = mcts(timeLimit=1000)
-                            while not isGameOver(self.state):
-                                action = mcts_.search(initialState=self.state)
+                        if event.key == K_BACKSPACE and self.state.turn_count_black > 3:
+                            self.state = self.state.prev_state
+                            self.deselect()
+                        elif event.key == K_LEFT:
+                            print('MCTS is searching for the best action...')
+                            mcts_ = MCTS(time_limit=5000)
+                            action = mcts_.search(init_state=self.state)
+                            if action.r_f < 0:
+                                action.r_f = abs(action.r_f)-1
+                                print('move from rack')
+                                print(action)
+                                self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
+                                make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
+                            else:
+                                print('move from board')
                                 print(action)
                                 self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
                                 make_move(self.state, action.r_t, action.c_t, self.state.board)
-                                self.draw_game()
-                                pygame.display.update()
-                                self.clock.tick(30)
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
                             if self.mouse_pos.collidepoint(event.pos):

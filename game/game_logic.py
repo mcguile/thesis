@@ -3,8 +3,8 @@ from count_hives import HiveGraph
 from copy import deepcopy
 from utils import *
 
-W = 'white'
-B = 'black'
+W = -1
+B = 1
 
 
 def opp(player):
@@ -158,6 +158,7 @@ def get_possible_moves_from_board(state):
 
 
 def make_move(state, to_row, to_col, fromm_board):
+    state.prev_state = deepcopy(state)
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     dest_t = type(state.board.board[to_row][to_col])
     if dest_t is not Blank:
@@ -272,9 +273,9 @@ def isGameOver(state):
     return surrounded
 
 
-def has_won(state):
+def has_won(state, player):
     won = True
-    bee_pos = state.bee_pos_white if state.players_turn == B else state.bee_pos_black
+    bee_pos = state.bee_pos_white if player == B else state.bee_pos_black
     for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
         hexa = state.board.board[n[0]][n[1]]
         if type(hexa) is Blank:
@@ -318,3 +319,10 @@ def move_to_board(state, event, fromm):
             if hexa.rect.collidepoint(event.pos) and (row, col) in state.possible_moves:
                 make_move(state, row, col, fromm)
                 return
+
+
+def get_rack_inidices(player):
+    if player == -1:
+        return 0, 3
+    else:
+        return 3, 6

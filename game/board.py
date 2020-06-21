@@ -1,8 +1,7 @@
-import numpy as np
 from insects import *
 
-W = 'white'
-B = 'black'
+W = -1
+B = 1
 
 
 class Board:
