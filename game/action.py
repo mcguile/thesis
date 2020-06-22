@@ -10,7 +10,7 @@ class Action:
         return str((self.r_f, self.c_f, self.r_t, self.c_t))
 
     def __repr__(self):
-        return str(self.r_f + ', ' + self.c_f + ' to ' + self.r_t + ', ' + self.c_t)
+        return '(' + str(self.r_f) + ', ' + str(self.c_f) + ' to ' + str(self.r_t) + ', ' + str(self.c_t) + ')'
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.r_f == other.r_f and self.c_f == other.c_f and \

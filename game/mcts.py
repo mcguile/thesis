@@ -5,10 +5,8 @@ import random
 
 def random_policy(state):
     while not state.is_terminal():
-        try:
-            action = random.choice(state.get_possible_actions())
-        except IndexError:
-            raise Exception('No possible actions for non-terminal state ' + str(state))
+        possible_actions = state.get_possible_actions()
+        action = random.choice(possible_actions) if len(possible_actions) > 0 else None
         state = state.take_action(action)
     return state.get_reward()
 
@@ -27,24 +25,20 @@ class Node:
 class MCTS:
     def __init__(self, time_limit=None, iter_limit=None, exploration_const=1/math.sqrt(2), rollout_policy=random_policy):
         self.root = None
-        if time_limit:
-            if iter_limit:
-                raise ValueError('Cannot have time limit and iteration limit. Choose one.')
-            self.time_limit = time_limit
-            self.limit_type = 'time'
-        else:
-            if not iter_limit:
-                raise ValueError('Must have one kind of limit - time or iteration.')
-            if iter_limit < 1:
-                raise ValueError('Iteration limit must be greater than one.')
-            self.iter_limit = iter_limit
-            self.limit_type = 'iter'
+        self.time_limit = time_limit
+        self.iter_limit = iter_limit
         self.exploration_const = exploration_const
         self.rollout_policy = rollout_policy
+        if time_limit and iter_limit:
+            raise ValueError('Cannot have time limit and iteration limit. Choose one.')
+        elif not time_limit and not iter_limit:
+            raise ValueError('Must have one kind of limit - time or iteration.')
+        elif iter_limit and iter_limit < 1:
+            raise ValueError('Iteration limit must be greater than one.')
 
     def search(self, init_state):
         self.root = Node(init_state, None)
-        if self.limit_type == 'time':
+        if self.time_limit:
             time_limit = time.time() + self.time_limit/1000
             while time.time() < time_limit:
                 self.execute_round()

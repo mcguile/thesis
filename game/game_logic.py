@@ -2,6 +2,7 @@ from insects import *
 from count_hives import HiveGraph
 from copy import deepcopy
 from utils import *
+import time
 
 W = -1
 B = 1
@@ -30,7 +31,7 @@ def move_wont_break_hive(r, c, s):
     Check if moving piece causes break in hive.
     Hive check needs to be through entire movement of a piece.
     i.e. if the hive is ever broken by either lifting the piece
-    of by placing the piece somewhere detached from the hive
+    or by placing the piece somewhere detached from the hive
     :param s:
     :param r:
     :param c:
@@ -52,8 +53,8 @@ def move_wont_break_hive(r, c, s):
     hives2ndcheck = HiveGraph(state.board).count_hives()
     return hives1stcheck == hives2ndcheck == 1
 
-
 def get_possible_moves_bee(state):
+    t = time.time()
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                                  state.board.width)
@@ -61,10 +62,23 @@ def get_possible_moves_bee(state):
         if type(state.board.board[r][c]) is Blank:
             if move_wont_break_hive(r, c, state):
                 possible_moves.add((r, c))
+    print(time.time()-t)
     return possible_moves
 
 
+def all_neighbours_but_selected_are_blank(neighbours, fromm, state):
+    """
+    Returns true if all neighbours of (r,c) are blank excluding the currently selected
+    hexagon which is also a neighbour of (r,c).
+    """
+    for row, col in neighbours:
+        if type(state.board.board[row][col]) is not Blank and (row, col) not in fromm:
+            return False
+    return True
+
+
 def get_possible_moves_spider(state):
+    t = time.time()
     # Spider must move three spaces and only three spaces.
     # Logic is to iterate nested three times for each hexagon
     # in a set of neighbours that are blank and dont break the hive.
@@ -72,26 +86,31 @@ def get_possible_moves_spider(state):
     n1_of_spider = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                        state.board.width)
     for r1, c1 in n1_of_spider:
-        if type(state.board.board[r1][c1]) is Blank:
-            if move_wont_break_hive(r1, c1, state) and not breaks_freedom_to_move_rule(r1, c1, state):
-                n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
-                for r2, c2 in n2_of_spider:
-                    if r2 == r1 and c2 == c1:
-                        continue
-                    if type(state.board.board[r2][c2]) is Blank:
-                        if move_wont_break_hive(r2, c2, state) and not breaks_freedom_to_move_rule(r2, c2, state):
-                            n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
-                            for r3, c3 in n3_of_spider:
-                                if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
-                                    continue
-                                if type(state.board.board[r3][c3]) is Blank:
-                                    if move_wont_break_hive(r3, c3, state) and not breaks_freedom_to_move_rule(
-                                            r3, c3, state):
-                                        possible_moves.add((r3, c3))
+        n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
+        from_lst = [(state.hexa_selected.r, state.hexa_selected.c)]
+        if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move_rule(r1, c1, state) and \
+                not all_neighbours_but_selected_are_blank(n2_of_spider, from_lst, state):
+            for r2, c2 in n2_of_spider:
+                if r2 == r1 and c2 == c1:
+                    continue
+                n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
+                from_lst.append((r1, c1))
+                if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move_rule(r2, c2, state) and \
+                        not all_neighbours_but_selected_are_blank(n3_of_spider, from_lst, state):
+                    for r3, c3 in n3_of_spider:
+                        if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
+                            continue
+                        n4_of_spider = get_cell_neighbours(r3, c3, state.board.height, state.board.width)
+                        from_lst.append((r2, c2))
+                        if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
+                                not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
+                            possible_moves.add((r3, c3))
+    print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_ant(state):
+    t = time.time()
     possible_moves = set()
     for r, _ in enumerate(state.board.board):
         for c, hexa in enumerate(state.board.board[r]):
@@ -103,15 +122,18 @@ def get_possible_moves_ant(state):
                             not breaks_freedom_to_move_rule(n_r, n_c, state) and \
                             move_wont_break_hive(n_r, n_c, state):
                         possible_moves.add((n_r, n_c))
+    print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_beetle(state):
+    t = time.time()
     possible_moves = set()
     for r, c in get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                     state.board.width):
         if move_wont_break_hive(r, c, state):
             possible_moves.add((r, c))
+    print(time.time()-t)
     return possible_moves
 
 
@@ -124,6 +146,7 @@ def valid_grasshopper_move(state, r, c):
 
 
 def get_possible_moves_grasshopper(state):
+    t = time.time()
     possible_moves = set()
     r, c = state.hexa_selected.r, state.hexa_selected.c
     n, s, ne, se, sw, nw = get_hexas_straight_line((r, c), state.board.width, state.board.height)
@@ -140,6 +163,7 @@ def get_possible_moves_grasshopper(state):
                 elif valid_grasshopper_move(state, r, c):
                     possible_moves.add((r, c))
                     break
+    print(time.time()-t)
     return possible_moves
 
 
@@ -158,6 +182,7 @@ def get_possible_moves_from_board(state):
 
 
 def make_move(state, to_row, to_col, fromm_board):
+    state.board.board_count += 1
     state.prev_state = deepcopy(state)
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     dest_t = type(state.board.board[to_row][to_col])
@@ -259,21 +284,12 @@ def is_bee_placed(state, player):
 
 
 def isGameOver(state):
-    if not is_bee_placed(state, W) or not is_bee_placed(state, B):
-        return False
-    surrounded = True
-    if opp(state.players_turn) == W:
-        bee_pos = state.bee_pos_black
-    else:
-        bee_pos = state.bee_pos_white
-    for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
-        hexa = state.board.board[n[0]][n[1]]
-        if type(hexa) is Blank:
-            surrounded = False
-    return surrounded
+    return has_won(state, W) or has_won(state, B)
 
 
 def has_won(state, player):
+    if not is_bee_placed(state, W) or not is_bee_placed(state, B) or state.turn_count_black < 5 or state.board.board_count < 7:
+        return False
     won = True
     bee_pos = state.bee_pos_white if player == B else state.bee_pos_black
     for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):

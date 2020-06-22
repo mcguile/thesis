@@ -6,6 +6,7 @@ from state import State
 from game_logic import *
 from mcts import MCTS
 import numpy as np
+import random
 
 W = -1
 B = 1
@@ -60,6 +61,8 @@ class Game:
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         """User Interface ATTR END"""
         self.state = State()
+        self.first_move_white = True
+        self.first_move_black = True
 
     def draw_rack_tiles(self):
         y = 0
@@ -137,9 +140,44 @@ class Game:
                         return True
         return False
 
+    def generate_random_full_board(self):
+        random.seed(13)
+        white_pieces = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (0, 3), (0, 4), (1, 4)]
+        black_pieces = [(3, 0), (4, 0), (5, 0), (3, 1), (4, 1), (3, 2), (4, 2), (5, 2), (3, 3), (3, 4), (4, 4)]
+        random.shuffle(white_pieces)
+        random.shuffle(black_pieces)
+        row, col = white_pieces.pop()
+        self.state.hexa_selected = self.state.start_tiles.board[row][col]
+        make_move(state=self.state, to_row=8, to_col=8, fromm_board=self.state.start_tiles)
+        row, col = black_pieces.pop()
+        self.state.hexa_selected = self.state.start_tiles.board[row][col]
+        make_move(state=self.state, to_row=9, to_col=8, fromm_board=self.state.start_tiles)
+        self.first_move_white = False
+        self.first_move_black = False
+        while self.state.board.board_count < 22:
+            if self.state.players_turn == W and not self.state.bee_placed_white and self.state.turn_count_white == 3:
+                self.state.hexa_selected = self.state.start_tiles.board[0][3]
+                white_pieces.remove((0, 3))
+                move = random.choice(list(get_possible_moves_from_rack(self.state)))
+                row, col = move[0], move[1]
+                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
+            elif self.state.players_turn == B and not self.state.bee_placed_black and self.state.turn_count_black == 3:
+                self.state.hexa_selected = self.state.start_tiles.board[3][3]
+                black_pieces.remove((3, 3))
+                move = random.choice(list(get_possible_moves_from_rack(self.state)))
+                row, col = move[0], move[1]
+                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
+            else:
+                row, col = white_pieces.pop() if self.state.players_turn == W else black_pieces.pop()
+                self.state.hexa_selected = self.state.start_tiles.board[row][col]
+                move = random.choice(list(get_possible_moves_from_rack(self.state)))
+                row, col = move[0], move[1]
+                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
+            self.draw_game()
+            pygame.display.update()
+            self.clock.tick(30)
+
     def run_game(self):
-        first_move_white = True
-        first_move_black = True
         move_from = None
         while True:
             for event in pygame.event.get():
@@ -154,7 +192,7 @@ class Game:
                             self.deselect()
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
-                            mcts_ = MCTS(time_limit=5000)
+                            mcts_ = MCTS(iter_limit=1)
                             action = mcts_.search(init_state=self.state)
                             if action.r_f < 0:
                                 action.r_f = abs(action.r_f)-1
@@ -173,8 +211,8 @@ class Game:
                                 self.deselect()
                             else:
                                 move_to_board(self.state, event, move_from)
-                                if first_move_black and black_has_moved(self.state):
-                                    first_move_black = False
+                                if self.first_move_black and black_has_moved(self.state):
+                                    self.first_move_black = False
                         else:
                             mouse_x, mouse_y = event.pos
                             if self.state.turn_count_white == 3 and self.state.players_turn == W and not is_bee_placed(self.state, W):
@@ -185,8 +223,8 @@ class Game:
                                     3].rect.centery
                             if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
                                 move_from = self.state.start_tiles
-                                if first_move_white:
-                                    first_move_white = move_white_first(self.state, first_move_white, event)
+                                if self.first_move_white:
+                                    self.first_move_white = move_white_first(self.state, self.first_move_white, event)
                                 else:
                                     self.select_from_rack_tiles((mouse_x, mouse_y))
                             else:
@@ -194,7 +232,7 @@ class Game:
                                 self.select_from_board(event)
 
                             if self.state.hexa_selected:
-                                if first_move_black:
+                                if self.first_move_black:
                                     self.state.possible_moves = get_possible_first_moves_black(self.state)
                                 elif move_from.height <= 6:
                                     self.state.possible_moves = get_possible_moves_from_rack(self.state)
@@ -207,4 +245,5 @@ class Game:
 
 
 game = Game()
+game.generate_random_full_board()
 game.run_game()

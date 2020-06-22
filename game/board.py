@@ -9,6 +9,7 @@ class Board:
         self.width = width
         self.height = height
         self.board = [[Blank() for _ in range(width)] for _ in range(height)]
+        self.board_count = 0
         if start_tiles:
             self._init_start_tiles()
 
