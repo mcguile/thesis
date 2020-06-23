@@ -33,7 +33,7 @@ def move_away_wont_break_hive(s):
     else:
         state.board.board[state.hexa_selected.r][state.hexa_selected.c] = Blank()
         hives1stcheck = HiveGraph(state.board).count_hives()
-        return hives1stcheck
+        return hives1stcheck == 1
 
 
 def get_possible_moves_bee(state):
