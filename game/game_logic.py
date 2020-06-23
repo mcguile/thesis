@@ -33,7 +33,7 @@ def move_away_wont_break_hive(s):
     else:
         state.board.board[state.hexa_selected.r][state.hexa_selected.c] = Blank()
         hives1stcheck = HiveGraph(state.board).count_hives()
-        return hives1stcheck == 1
+        return hives1stcheck
 
 
 def get_possible_moves_bee(state):
@@ -168,7 +168,8 @@ def get_possible_moves_from_board(state):
 
 
 def make_move(state, to_row, to_col, fromm_board):
-    state.board.board_count += 1
+    if fromm_board == state.start_tiles:
+        state.board.board_count += 1
     state.prev_state = deepcopy(state)
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     dest_t = type(state.board.board[to_row][to_col])

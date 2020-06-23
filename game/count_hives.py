@@ -52,6 +52,8 @@ class HiveGraph:
                 if not visited[row][col] and type(self.graph[row][col]) != Blank:
                     # Visit all hexagons in this hive
                     # and increment hive count
-                    self.dfs(row, col, visited)
                     count += 1
-        return count
+                    if count > 1:
+                        return count
+                    self.dfs(row, col, visited)
+        return 1
