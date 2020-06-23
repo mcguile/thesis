@@ -37,18 +37,18 @@ def move_away_wont_break_hive(s):
 
 
 def get_possible_moves_bee(state):
-    # t = time.time()
+    t = time.time()
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                                  state.board.width)
+    # if move_away_wont_break_hive(state):
     for r, c in neighbours_of_selected:
         if type(state.board.board[r][c]) is Blank:
-            if move_away_wont_break_hive(state):
-                neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
-                if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
-                                                             [(state.hexa_selected.r, state.hexa_selected.c)], state):
-                    possible_moves.add((r, c))
-    # print(time.time()-t)
+            neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
+            if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
+                                                         [(state.hexa_selected.r, state.hexa_selected.c)], state):
+                possible_moves.add((r, c))
+    print(time.time()-t)
     return possible_moves
 
 
@@ -64,7 +64,7 @@ def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
 
 
 def get_possible_moves_spider(state):
-    # t = time.time()
+    t = time.time()
     # Spider must move three spaces and only three spaces.
     # Logic is to iterate nested three times for each hexagon
     # in a set of neighbours that are blank and dont break the hive.
@@ -91,12 +91,12 @@ def get_possible_moves_spider(state):
                         if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
                                 not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
                             possible_moves.add((r3, c3))
-    # print(time.time()-t)
+    print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_ant(state):
-    # t = time.time()
+    t = time.time()
     possible_moves = set()
     if not move_away_wont_break_hive(state):
         return possible_moves
@@ -109,46 +109,47 @@ def get_possible_moves_ant(state):
                     if type(state.board.board[n_r][n_c]) is Blank and \
                             not breaks_freedom_to_move_rule(n_r, n_c, state):
                         possible_moves.add((n_r, n_c))
-    # print(time.time()-t)
+    print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_beetle(state):
-    # t = time.time()
+    t = time.time()
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                                  state.board.width)
-    for r, c in neighbours_of_selected:
-        if move_away_wont_break_hive(state):
+    if move_away_wont_break_hive(state):
+        for r, c in neighbours_of_selected:
             neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
             if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour, [(state.hexa_selected.r, state.hexa_selected.c)], state):
                 possible_moves.add((r, c))
-    # print(time.time()-t)
+    print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_grasshopper(state):
-    # t = time.time()
+    t = time.time()
     possible_moves = set()
     r, c = state.hexa_selected.r, state.hexa_selected.c
     n, s, ne, se, sw, nw = get_hexas_straight_line((r, c), state.board.width, state.board.height)
-    for direction in [n, s, ne, se, sw, nw]:
-        found_bug_to_jump = False
-        for r, c in direction:
-            if 0 <= r < state.board.height and 0 <= c < state.board.width:
-                if not found_bug_to_jump:
-                    if type(state.board.board[r][c]) is Blank:
+    if move_away_wont_break_hive(state):
+        for direction in [n, s, ne, se, sw, nw]:
+            found_bug_to_jump = False
+            for r, c in direction:
+                if 0 <= r < state.board.height and 0 <= c < state.board.width:
+                    if not found_bug_to_jump:
+                        if type(state.board.board[r][c]) is Blank:
+                            break
+                        else:
+                            found_bug_to_jump = True
+                            continue
+                    neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
+                    if type(state.board.board[r][c]) is Blank and \
+                            not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
+                                                                 [(state.hexa_selected.r, state.hexa_selected.c)], state):
+                        possible_moves.add((r, c))
                         break
-                    else:
-                        found_bug_to_jump = True
-                        continue
-                neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
-                if type(state.board.board[r][c]) is Blank and move_away_wont_break_hive(state) and \
-                        not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
-                                                             [(state.hexa_selected.r, state.hexa_selected.c)], state):
-                    possible_moves.add((r, c))
-                    break
-    # print(time.time()-t)
+    print(time.time()-t)
     return possible_moves
 
 
@@ -273,7 +274,7 @@ def isGameOver(state):
 
 
 def has_won(state, player):
-    if not is_bee_placed(state, W) or not is_bee_placed(state, B) or state.turn_count_black < 5 or state.board.board_count < 7:
+    if state.turn_count_black < 5 or state.board.board_count < 7:
         return False
     won = True
     bee_pos = state.bee_pos_white if player == B else state.bee_pos_black

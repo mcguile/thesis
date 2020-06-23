@@ -1,4 +1,4 @@
-22/06/2020
+16/06/2020 - 23/06/2020
 
 Known bugs:
 - ~~Beetle was allowed to break hive~~
@@ -15,6 +15,9 @@ Notes:
         - Bee: 0.17 seconds
         - Spider: 1.3 seconds
         - Ant: 4.8 seconds
-    - Optimised Spider to a time of 0.0002 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
-    - Optimised Ant to a time of 0.085 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
-    - Other insects also modified in the same manner to no benefit or detriment
+    - Optimised Spider to a time of 0.0003 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
+    - Optimised Ant to a time of 0.08 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
+    - Optimised Beetle to a time of 0.08 in the same manner
+    - Optimised Bee to a time of 0.08 in the same manner
+    - Grasshopper modified in the same manner to no benefit or detriment
+- Noted that the current One-Hive check which detemimes if merely moving away from position breaks the hive increases time taken by a factor of 4000!

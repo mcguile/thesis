@@ -71,7 +71,7 @@ class State:
         return new_state
 
     def is_terminal(self):
-        return isGameOver(self)
+        return isGameOver(self) or not player_able_to_move(self)
 
     def get_reward(self):
         if has_won(self, W):

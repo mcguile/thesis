@@ -192,17 +192,15 @@ class Game:
                             self.deselect()
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
-                            mcts_ = MCTS(iter_limit=1)
+                            mcts_ = MCTS(iter_limit=100)
                             action = mcts_.search(init_state=self.state)
                             if action.r_f < 0:
                                 action.r_f = abs(action.r_f)-1
                                 print('move from rack')
-                                print(action)
                                 self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
                                 make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
                             else:
                                 print('move from board')
-                                print(action)
                                 self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
                                 make_move(self.state, action.r_t, action.c_t, self.state.board)
                     elif event.type == pygame.MOUSEBUTTONUP:
