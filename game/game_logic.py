@@ -32,8 +32,8 @@ def move_away_wont_break_hive(s):
         return False
     else:
         state.board.board[state.hexa_selected.r][state.hexa_selected.c] = Blank()
-        hives1stcheck = HiveGraph(state.board).count_hives()
-        return hives1stcheck == 1
+        one_hive = HiveGraph(state.board).one_hive()
+        return one_hive
 
 
 def get_possible_moves_bee(state):
@@ -65,32 +65,33 @@ def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
 
 def get_possible_moves_spider(state):
     t = time.time()
-    # Spider must move three spaces and only three spaces.
-    # Logic is to iterate nested three times for each hexagon
-    # in a set of neighbours that are blank and dont break the hive.
     possible_moves = set()
-    n1_of_spider = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
-                                       state.board.width)
-    for r1, c1 in n1_of_spider:
-        n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
-        from_lst = [(state.hexa_selected.r, state.hexa_selected.c)]
-        if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move_rule(r1, c1, state) and \
-                not all_neighbours_but_selected_are_blank(n2_of_spider, from_lst, state):
-            for r2, c2 in n2_of_spider:
-                if r2 == r1 and c2 == c1:
-                    continue
-                n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
-                from_lst.append((r1, c1))
-                if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move_rule(r2, c2, state) and \
-                        not all_neighbours_but_selected_are_blank(n3_of_spider, from_lst, state):
-                    for r3, c3 in n3_of_spider:
-                        if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
-                            continue
-                        n4_of_spider = get_cell_neighbours(r3, c3, state.board.height, state.board.width)
-                        from_lst.append((r2, c2))
-                        if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
-                                not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
-                            possible_moves.add((r3, c3))
+    if move_away_wont_break_hive(state):
+        # Spider must move three spaces and only three spaces.
+        # Logic is to iterate nested three times for each hexagon
+        # in a set of neighbours that are blank and dont break the hive.
+        n1_of_spider = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
+                                           state.board.width)
+        for r1, c1 in n1_of_spider:
+            n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
+            from_lst = [(state.hexa_selected.r, state.hexa_selected.c)]
+            if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move_rule(r1, c1, state) and \
+                    not all_neighbours_but_selected_are_blank(n2_of_spider, from_lst, state):
+                for r2, c2 in n2_of_spider:
+                    if r2 == r1 and c2 == c1:
+                        continue
+                    n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
+                    from_lst.append((r1, c1))
+                    if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move_rule(r2, c2, state) and \
+                            not all_neighbours_but_selected_are_blank(n3_of_spider, from_lst, state):
+                        for r3, c3 in n3_of_spider:
+                            if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
+                                continue
+                            n4_of_spider = get_cell_neighbours(r3, c3, state.board.height, state.board.width)
+                            from_lst.append((r2, c2))
+                            if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
+                                    not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
+                                possible_moves.add((r3, c3))
     print(time.time()-t)
     return possible_moves
 

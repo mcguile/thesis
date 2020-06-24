@@ -15,7 +15,7 @@ Notes:
         - Bee: 0.17 seconds
         - Spider: 1.3 seconds
         - Ant: 4.8 seconds
-    - Optimised Spider to a time of 0.0003 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
+    - Optimised Spider to a time of 0.08 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
     - Optimised Ant to a time of 0.08 seconds (!) by removing one of the two One-Hive checkers and implementing custom approach
     - Optimised Beetle to a time of 0.08 in the same manner
     - Optimised Bee to a time of 0.08 in the same manner
