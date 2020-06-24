@@ -48,7 +48,7 @@ def get_possible_moves_bee(state):
             if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
                                                          [(state.hexa_selected.r, state.hexa_selected.c)], state):
                 possible_moves.add((r, c))
-    print(time.time()-t)
+    #print(time.time()-t)
     return possible_moves
 
 
@@ -92,7 +92,7 @@ def get_possible_moves_spider(state):
                             if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
                                     not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
                                 possible_moves.add((r3, c3))
-    print(time.time()-t)
+    #print(time.time()-t)
     return possible_moves
 
 
@@ -110,7 +110,7 @@ def get_possible_moves_ant(state):
                     if type(state.board.board[n_r][n_c]) is Blank and \
                             not breaks_freedom_to_move_rule(n_r, n_c, state):
                         possible_moves.add((n_r, n_c))
-    print(time.time()-t)
+    #print(time.time()-t)
     return possible_moves
 
 
@@ -124,7 +124,7 @@ def get_possible_moves_beetle(state):
             neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
             if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour, [(state.hexa_selected.r, state.hexa_selected.c)], state):
                 possible_moves.add((r, c))
-    print(time.time()-t)
+    #print(time.time()-t)
     return possible_moves
 
 
@@ -150,7 +150,7 @@ def get_possible_moves_grasshopper(state):
                                                                  [(state.hexa_selected.r, state.hexa_selected.c)], state):
                         possible_moves.add((r, c))
                         break
-    print(time.time()-t)
+    #print(time.time()-t)
     return possible_moves
 
 
@@ -170,6 +170,10 @@ def get_possible_moves_from_board(state):
 
 def make_move(state, to_row, to_col, fromm_board):
     if fromm_board == state.start_tiles:
+        if state.players_turn == W:
+            state.start_tiles.board_count_w -= 1
+        else:
+            state.start_tiles.board_count_b -= 1
         state.board.board_count += 1
     state.prev_state = deepcopy(state)
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
@@ -232,13 +236,13 @@ def player_able_to_move(state):
 
 
 def set_player_turn(state):
-    for row in range(state.start_tiles.height):
-        for col, hexa in enumerate(state.start_tiles.board[row]):
-            if hexa.player == state.players_turn:
-                return
-    player_can_move = player_able_to_move(state)
-    if not player_can_move:
-        state.players_turn = opp(state.players_turn)
+    if state.players_turn == W and state.start_tiles.board_count_w > 0 or \
+            state.players_turn == B and state.start_tiles.board_count_b > 0:
+        return
+    else:
+        player_can_move = player_able_to_move(state)
+        if not player_can_move:
+            state.players_turn = opp(state.players_turn)
 
 
 def move_white_first(state, first_move, event):

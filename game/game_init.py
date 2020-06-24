@@ -40,7 +40,7 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, time_limit, iter_limit):
         """User Interface ATTR START"""
         self.pixel_width = 1000
         self.pixel_height = 1000
@@ -60,6 +60,8 @@ class Game:
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         """User Interface ATTR END"""
+        self.time_limit = time_limit
+        self.iter_limit = iter_limit
         self.state = State()
         self.first_move_white = True
         self.first_move_black = True
@@ -140,8 +142,8 @@ class Game:
                         return True
         return False
 
-    def generate_random_full_board(self):
-        random.seed(13)
+    def generate_random_full_board(self, seed):
+        random.seed(seed)
         white_pieces = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (0, 3), (0, 4), (1, 4)]
         black_pieces = [(3, 0), (4, 0), (5, 0), (3, 1), (4, 1), (3, 2), (4, 2), (5, 2), (3, 3), (3, 4), (4, 4)]
         random.shuffle(white_pieces)
@@ -192,7 +194,7 @@ class Game:
                             self.deselect()
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
-                            mcts_ = MCTS(iter_limit=100)
+                            mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
                             action = mcts_.search(init_state=self.state)
                             if action.r_f < 0:
                                 action.r_f = abs(action.r_f)-1
@@ -242,6 +244,6 @@ class Game:
             self.clock.tick(30)
 
 
-game = Game()
-game.generate_random_full_board()
+game = Game(time_limit=None, iter_limit=1)
+game.generate_random_full_board(seed=13)
 game.run_game()

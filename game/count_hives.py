@@ -1,6 +1,7 @@
 from insects import Blank
 from collections import deque
 
+
 class HiveGraph:
     def __init__(self, board):
         self.row = board.height
@@ -51,7 +52,6 @@ class HiveGraph:
                     # Visit all hexagons in this hive
                     # and increment hive count
                     count += 1
-                    print(count)
                     if count > 1:
                         return False
                     self.dfs(row, col)

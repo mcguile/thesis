@@ -53,9 +53,11 @@ class State:
         #                 for move in targets:
         #                     possible_moves.append(
         #                         Action(player=s.players_turn, r_f=-row - 1, c_f=col, r_t=move[0], c_t=move[1]))
+        print(self.players_turn, possible_moves)
         return possible_moves
 
     def take_action(self, action):
+        print(action)
         new_state = deepcopy(self)
         if not action:
             new_state.players_turn = opp(new_state.players_turn)
@@ -71,7 +73,7 @@ class State:
         return new_state
 
     def is_terminal(self):
-        return isGameOver(self) or not player_able_to_move(self)
+        return isGameOver(self)  # or not player_able_to_move(self)
 
     def get_reward(self):
         if has_won(self, W):
