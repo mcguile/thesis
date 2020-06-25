@@ -7,6 +7,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None):
+        self.limit = 10
         self.board = board if board else Board(16, 16)
         self.start_tiles = start_tiles if start_tiles else Board(6, 5, True)
         self.players_turn = W
@@ -15,6 +16,7 @@ class State:
         self.bee_placed_white, self.bee_placed_black = False, False
         self.bee_pos_white, self.bee_pos_black = (0, 3), (3, 3)
         self.turn_count_white, self.turn_count_black = 0, 0
+        self.plies_checked = 0
         self.possible_moves = set()
         self.prev_state = None
 
@@ -22,16 +24,16 @@ class State:
         return self.players_turn
 
     def get_possible_actions(self):
-        s = deepcopy(self)
+        # s = deepcopy(self)
         possible_moves = []
         # BOARD
-        for row in range(s.board.height):
-            for col, hexa in enumerate(s.board.board[row]):
-                if hexa.player == s.players_turn:
-                    s.hexa_selected = hexa
-                    for move in get_possible_moves_from_board(s):
+        for row in range(self.board.height):
+            for col, hexa in enumerate(self.board.board[row]):
+                if hexa.player == self.players_turn:
+                    self.hexa_selected = hexa
+                    for move in get_possible_moves_from_board(self):
                         possible_moves.append(
-                            Action(player=s.players_turn, r_f=row, c_f=col, r_t=move[0], c_t=move[1]))
+                            Action(player=self.players_turn, r_f=row, c_f=col, r_t=move[0], c_t=move[1]))
         # RACK
         # disabled due to huge increase in time for decision making
         # start, stop = get_rack_inidices(s.players_turn)
@@ -53,27 +55,37 @@ class State:
         #                 for move in targets:
         #                     possible_moves.append(
         #                         Action(player=s.players_turn, r_f=-row - 1, c_f=col, r_t=move[0], c_t=move[1]))
-        print(self.players_turn, possible_moves)
         return possible_moves
 
     def take_action(self, action):
-        print(action)
+        # print(action, self.board.board[action.r_f][action.c_f])
         new_state = deepcopy(self)
+        new_state.plies_checked += 1
         if not action:
             new_state.players_turn = opp(new_state.players_turn)
         else:
             if action.r_f < 0:
                 #  We are moving from a rack
-                new_state.board.board[action.r_t][action.c_t] = new_state.start_tiles.board[abs(action.r_f)-1][action.c_f]
+                new_state.hexa_selected = new_state.start_tiles.board[abs(action.r_f)-1][action.c_f]
+                make_move(new_state, action.r_t, action.c_t, new_state.start_tiles)
+                # new_state.board.board[action.r_t][action.c_t] = new_state.start_tiles.board[abs(action.r_f)-1][action.c_f]
             else:
                 #  We are moving from the board
-                new_state.board.board[action.r_t][action.c_t] = new_state.board.board[action.r_f][action.c_f]
-            new_state.board.board[action.r_f][action.c_f] = Blank()
+                new_state.hexa_selected = new_state.board.board[action.r_f][action.c_f]
+                make_move(new_state, action.r_t, action.c_t, new_state.board)
+                # new_state.board.board[action.r_t][action.c_t] = new_state.board.board[action.r_f][action.c_f]
+            # new_state.board.board[action.r_f][action.c_f] = Blank()
             new_state.players_turn = opp(new_state.players_turn)
         return new_state
 
+    def depth_limit_reached(self):
+        if self.limit and self.plies_checked == self.limit:
+            self.plies_checked = 0
+            return True
+        return False
+
     def is_terminal(self):
-        return isGameOver(self)  # or not player_able_to_move(self)
+        return isGameOver(self) or self.depth_limit_reached()
 
     def get_reward(self):
         if has_won(self, W):

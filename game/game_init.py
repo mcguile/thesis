@@ -59,6 +59,8 @@ class Game:
         self.hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
+        self.font = pygame.font.Font('freesansbold.ttf', 20)
+        self.numbers = False
         """User Interface ATTR END"""
         self.time_limit = time_limit
         self.iter_limit = iter_limit
@@ -95,6 +97,10 @@ class Game:
                 hexa.rect = pygame.Rect((x, y), self.hexa_size)
                 y += 30 if c % 2 == 0 else -30
                 x += 52
+                if self.numbers:
+                    text = self.font.render(str(r) + ' ' + str(c), True, (255, 255, 255))
+                    yn = y-10 if c % 2 == 0 else y+60
+                    self.drag_surf.blit(text, (x-35, yn))
             y_o += 60
 
     def draw_game(self):
@@ -181,6 +187,7 @@ class Game:
 
     def run_game(self):
         move_from = None
+        action = None
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -189,22 +196,27 @@ class Game:
 
                 if not isGameOver(self.state):
                     if event.type == pygame.KEYDOWN:
-                        if event.key == K_BACKSPACE and self.state.turn_count_black > 3:
+                        if event.key == K_n:
+                            self.numbers = not self.numbers
+                        elif event.key == K_BACKSPACE and self.state.turn_count_black > 3:
                             self.state = self.state.prev_state
                             self.deselect()
                         elif event.key == K_LEFT:
-                            print('MCTS is searching for the best action...')
-                            mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
-                            action = mcts_.search(init_state=self.state)
-                            if action.r_f < 0:
-                                action.r_f = abs(action.r_f)-1
-                                print('move from rack')
-                                self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
-                                make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
-                            else:
-                                print('move from board')
-                                self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
-                                make_move(self.state, action.r_t, action.c_t, self.state.board)
+                            while str(action) != '(4, 8 to 10, 11)':#not isGameOver(self.state):
+                                print('\nMCTS is searching for the best action...')
+                                mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
+                                action = mcts_.search(init_state=self.state)
+                                if action.r_f < 0:
+                                    action.r_f = abs(action.r_f)-1
+                                    self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
+                                    make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
+                                else:
+                                    self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
+                                    make_move(self.state, action.r_t, action.c_t, self.state.board)
+                                print(action)
+                                self.draw_game()
+                                pygame.display.update()
+                                self.clock.tick(30)
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
                             if self.mouse_pos.collidepoint(event.pos):
@@ -244,6 +256,7 @@ class Game:
             self.clock.tick(30)
 
 
-game = Game(time_limit=None, iter_limit=1)
+pygame.init()
+game = Game(time_limit=None, iter_limit=5)
 game.generate_random_full_board(seed=13)
 game.run_game()

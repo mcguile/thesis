@@ -3,6 +3,8 @@ from count_hives import HiveGraph
 from copy import deepcopy
 from utils import *
 import time
+import pprofile
+
 
 W = -1
 B = 1
@@ -14,25 +16,94 @@ def opp(player):
 
 def breaks_freedom_to_move_rule(r, c, state):
     """
-    Does the hex attempted to be moved to have 5 or more pieces around it?
     'Freedom to move' rule.
     :return: boolean
     """
-    neighbours = get_cell_neighbours(r, c, state.board.height, state.board.width)
-    count_pieces = 0
-    for r, c in neighbours:
-        if type(state.board.board[r][c]) != Blank:
-            count_pieces += 1
-    return count_pieces >= 5
+    curr_row, curr_col = state.hexa_selected.r, state.hexa_selected.c
+    if c == curr_col and r == curr_row-1:
+        # N
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row-1][curr_col-1]) is not Blank and type(
+                    state.board.board[curr_row-1][curr_col+1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row][curr_col-1]) is not Blank and type(
+                    state.board.board[curr_row][curr_col+1]) is not Blank:
+                return True
+    elif c == curr_col and r == curr_row+1:
+        # S
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row][curr_col - 1]) is not Blank and type(
+                    state.board.board[curr_row][curr_col + 1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row+1][curr_col - 1]) is not Blank and type(
+                    state.board.board[curr_row+1][curr_col + 1]) is not Blank:
+                return True
+    elif (c == curr_col-1 and curr_col % 2 == 0 and r == curr_row-1) or (
+        curr_col % 2 == 1 and r == curr_row and c == curr_col-1
+    ):
+        # NW
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row-1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row][curr_col-1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row+1][curr_col - 1]) is not Blank:
+                return True
+    elif (c == curr_col-1 and curr_col % 2 == 0 and r == curr_row) or (
+        curr_col % 2 == 1 and c == curr_col-1 and r == curr_row+1
+    ):
+        # SW
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row-1][curr_col - 1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row][curr_col - 1]) is not Blank:
+                return True
+    elif (c == curr_col+1 and curr_col % 2 == 0 and r == curr_row-1) or (
+        curr_col % 2 == 1 and r == curr_row and c == curr_col+1
+    ):
+        # NE
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row][curr_col + 1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row + 1][curr_col + 1]) is not Blank:
+                return True
+    else:
+        # SE
+        if curr_col % 2 == 0:
+            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
+                    state.board.board[curr_row-1][curr_col + 1]) is not Blank:
+                return True
+        else:
+            if type(state.board.board[curr_row][curr_col+1]) is not Blank and type(
+                    state.board.board[curr_row + 1][curr_col]) is not Blank:
+                return True
+    return False
 
 
-def move_away_wont_break_hive(s):
-    state = deepcopy(s)
+def move_away_wont_break_hive(state):
     if type(state.hexa_selected) is Stack:
         return False
+    neighbours = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height, state.board.width)
+    count_nonblank_neighbours = 0
+    for r, c in neighbours:
+        if type(state.board.board[r][c]) is not Blank:
+            count_nonblank_neighbours += 1
+    if count_nonblank_neighbours <= 1:
+        return True
     else:
+        tmp = state.board.board[state.hexa_selected.r][state.hexa_selected.c]
         state.board.board[state.hexa_selected.r][state.hexa_selected.c] = Blank()
         one_hive = HiveGraph(state.board).one_hive()
+        state.board.board[state.hexa_selected.r][state.hexa_selected.c] = tmp
         return one_hive
 
 
@@ -41,13 +112,15 @@ def get_possible_moves_bee(state):
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                                  state.board.width)
-    # if move_away_wont_break_hive(state):
-    for r, c in neighbours_of_selected:
-        if type(state.board.board[r][c]) is Blank:
-            neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
-            if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
-                                                         [(state.hexa_selected.r, state.hexa_selected.c)], state):
-                possible_moves.add((r, c))
+    if move_away_wont_break_hive(state):
+        for r, c in neighbours_of_selected:
+            if breaks_freedom_to_move_rule(r, c, state):
+                continue
+            if type(state.board.board[r][c]) is Blank:
+                neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
+                if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
+                                                             [(state.hexa_selected.r, state.hexa_selected.c)], state):
+                    possible_moves.add((r, c))
     #print(time.time()-t)
     return possible_moves
 
@@ -92,7 +165,7 @@ def get_possible_moves_spider(state):
                             if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
                                     not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
                                 possible_moves.add((r3, c3))
-    #print(time.time()-t)
+    # print(time.time()-t)
     return possible_moves
 
 
@@ -225,12 +298,11 @@ def make_move(state, to_row, to_col, fromm_board):
 
 
 def player_able_to_move(state):
-    s = deepcopy(state)
-    for row in range(s.board.height):
-        for col, hexa in enumerate(s.board.board[row]):
-            if hexa.player == s.players_turn:
-                s.hexa_selected = hexa
-                if len(get_possible_moves_from_board(s)) > 0:
+    for row in range(state.board.height):
+        for col, hexa in enumerate(state.board.board[row]):
+            if hexa.player == state.players_turn:
+                state.hexa_selected = hexa
+                if len(get_possible_moves_from_board(state)) > 0:
                     return True
     return False
 
@@ -239,10 +311,8 @@ def set_player_turn(state):
     if state.players_turn == W and state.start_tiles.board_count_w > 0 or \
             state.players_turn == B and state.start_tiles.board_count_b > 0:
         return
-    else:
-        player_can_move = player_able_to_move(state)
-        if not player_can_move:
-            state.players_turn = opp(state.players_turn)
+    elif not player_able_to_move(state):
+        state.players_turn = opp(state.players_turn)
 
 
 def move_white_first(state, first_move, event):

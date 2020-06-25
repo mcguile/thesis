@@ -1,5 +1,4 @@
 from insects import Blank
-from collections import deque
 
 
 class HiveGraph:
@@ -8,6 +7,7 @@ class HiveGraph:
         self.col = board.width
         self.visited = [[False for _ in range(self.col)] for _ in range(self.row)]
         self.graph = board.board
+        # TODO see if type checking is slowing it down
 
     # A function to check if a given hexagon can be included in DFS
     def is_safe(self, row, col):
@@ -25,6 +25,7 @@ class HiveGraph:
         # These arrays are used to get row and
         # column numbers of 6 neighbours
         # of a given hexagon
+        # TODO move these to self
         if col % 2 == 1:
             row_nbr = [-1,  0, 0,  1, 1, 1]
             col_nbr = [ 0, -1, 1, -1, 0, 1]

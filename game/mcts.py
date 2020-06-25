@@ -2,7 +2,6 @@ import time
 import math
 import random
 
-
 def random_policy(state):
     # while not state.is_terminal():
     #     possible_actions = state.get_possible_actions()
@@ -50,7 +49,7 @@ class MCTS:
             while time.time() < time_limit:
                 self.execute_round()
         else:
-            for i in range(self.iter_limit):
+            for _ in range(self.iter_limit):
                 self.execute_round()
         best_child = self.get_best_child(self.root)
         return self.get_action(self.root, best_child)
