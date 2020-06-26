@@ -14,79 +14,64 @@ def opp(player):
     return B if player == W else W
 
 
-def breaks_freedom_to_move_rule(r, c, state):
-    """
-    'Freedom to move' rule.
-    :return: boolean
-    """
-    curr_row, curr_col = state.hexa_selected.r, state.hexa_selected.c
-    if c == curr_col and r == curr_row-1:
-        # N
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row-1][curr_col-1]) is not Blank and type(
-                    state.board.board[curr_row-1][curr_col+1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row][curr_col-1]) is not Blank and type(
-                    state.board.board[curr_row][curr_col+1]) is not Blank:
-                return True
-    elif c == curr_col and r == curr_row+1:
-        # S
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row][curr_col - 1]) is not Blank and type(
-                    state.board.board[curr_row][curr_col + 1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row+1][curr_col - 1]) is not Blank and type(
-                    state.board.board[curr_row+1][curr_col + 1]) is not Blank:
-                return True
-    elif (c == curr_col-1 and curr_col % 2 == 0 and r == curr_row-1) or (
-        curr_col % 2 == 1 and r == curr_row and c == curr_col-1
-    ):
-        # NW
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row-1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row][curr_col-1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row+1][curr_col - 1]) is not Blank:
-                return True
-    elif (c == curr_col-1 and curr_col % 2 == 0 and r == curr_row) or (
-        curr_col % 2 == 1 and c == curr_col-1 and r == curr_row+1
-    ):
-        # SW
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row-1][curr_col - 1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row][curr_col - 1]) is not Blank:
-                return True
-    elif (c == curr_col+1 and curr_col % 2 == 0 and r == curr_row-1) or (
-        curr_col % 2 == 1 and r == curr_row and c == curr_col+1
-    ):
-        # NE
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row][curr_col + 1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row - 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row + 1][curr_col + 1]) is not Blank:
-                return True
+def get_hexa_neighbours(r, c, state):
+    neighbours = []
+    non_blank_neighbours = 0
+    min_r, max_r, min_c, max_c = get_minmax_rowcol(r, c, state.board.height, state.board.width)
+    for row in range(min_r, max_r + 1):
+        for col in range(min_c, max_c + 1):
+            if col == c and row == r:
+                continue
+            elif (c % 2 == 0) and ((col == c + 1 and row == r + 1) or (row == r + 1 and col == c - 1)):
+                continue
+            elif (c % 2 == 1) and ((col == c - 1 and row == r - 1) or (row == r - 1 and col == c + 1)):
+                continue
+            else:
+                hexa = state.board.board[row][col]
+                hexa.r, hexa.c = row, col
+                if type(hexa) is not Blank:
+                    non_blank_neighbours += 1
+                neighbours.append(hexa)
+    return neighbours, non_blank_neighbours > 4
+
+
+def in_bounds(r, c, state):
+    try:
+        _ = state.board.board[r][c]
+        return True
+    except IndexError:
+        return False
+
+
+def hex_is_not_blank(r, c, state):
+    return in_bounds(r, c, state) and type(state.board.board[r][c]) is not Blank
+
+
+def breaks_freedom_to_move(r, c, R, C, state):
+    if r == R-1 and c == C:
+        # North
+        return hex_is_not_blank(R-1, C-1, state) and hex_is_not_blank(R-1, C+1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R, C - 1, state) and hex_is_not_blank(R, C + 1, state)
+    elif r == R+1 and c == C:
+        # South
+        return hex_is_not_blank(R, C-1, state) and hex_is_not_blank(R, C+1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R+1, C - 1, state) and hex_is_not_blank(R+1, C + 1, state)
+    elif r == R -1 and c == C-1:
+        # North-West
+        return hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R, C-1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R+1, C - 1, state)
+    elif r == R and c == C-1:
+        # South-West
+        return hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R-1, C-1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R, C - 1, state) and hex_is_not_blank(R, C + 1, state)
+    elif r == R-1 and c == C+1:
+        # North-East
+        return hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R, C+1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R, C - 1, state)
     else:
-        # SE
-        if curr_col % 2 == 0:
-            if type(state.board.board[curr_row + 1][curr_col]) is not Blank and type(
-                    state.board.board[curr_row-1][curr_col + 1]) is not Blank:
-                return True
-        else:
-            if type(state.board.board[curr_row][curr_col+1]) is not Blank and type(
-                    state.board.board[curr_row + 1][curr_col]) is not Blank:
-                return True
-    return False
+        # South-East
+        return hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R-1, C+1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R, C + 1, state) and hex_is_not_blank(R+1, C, state)
 
 
 def move_away_wont_break_hive(state):
@@ -114,7 +99,7 @@ def get_possible_moves_bee(state):
                                                  state.board.width)
     if move_away_wont_break_hive(state):
         for r, c in neighbours_of_selected:
-            if breaks_freedom_to_move_rule(r, c, state):
+            if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
                 continue
             if type(state.board.board[r][c]) is Blank:
                 neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
@@ -137,6 +122,7 @@ def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
 
 
 def get_possible_moves_spider(state):
+    # TODO FIX
     t = time.time()
     possible_moves = set()
     if move_away_wont_break_hive(state):
@@ -148,21 +134,21 @@ def get_possible_moves_spider(state):
         for r1, c1 in n1_of_spider:
             n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
             from_lst = [(state.hexa_selected.r, state.hexa_selected.c)]
-            if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move_rule(r1, c1, state) and \
+            if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move(r1, c1, state.hexa_selected.r, state.hexa_selected.c, state) and \
                     not all_neighbours_but_selected_are_blank(n2_of_spider, from_lst, state):
                 for r2, c2 in n2_of_spider:
                     if r2 == r1 and c2 == c1:
                         continue
                     n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
                     from_lst.append((r1, c1))
-                    if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move_rule(r2, c2, state) and \
+                    if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move(r2, c2, r1, c1, state) and \
                             not all_neighbours_but_selected_are_blank(n3_of_spider, from_lst, state):
                         for r3, c3 in n3_of_spider:
                             if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
                                 continue
                             n4_of_spider = get_cell_neighbours(r3, c3, state.board.height, state.board.width)
                             from_lst.append((r2, c2))
-                            if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move_rule(r3, c3, state) and \
+                            if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move(r3, c3, r2, c2, state) and \
                                     not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
                                 possible_moves.add((r3, c3))
     # print(time.time()-t)
@@ -180,9 +166,13 @@ def get_possible_moves_ant(state):
                 continue
             if type(state.board.board[r][c]) is not Blank:
                 for n_r, n_c in get_cell_neighbours(r, c, state.board.height, state.board.width):
-                    if type(state.board.board[n_r][n_c]) is Blank and \
-                            not breaks_freedom_to_move_rule(n_r, n_c, state):
-                        possible_moves.add((n_r, n_c))
+                    if type(state.board.board[n_r][n_c]) is Blank:
+                        hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
+                        if not surrounded_five_plus:
+                            for hexa in hexa_neighbours:
+                                if type(hexa) is Blank and not breaks_freedom_to_move(hexa.r, hexa.c, n_r, n_c, state):
+                                    possible_moves.add((n_r, n_c))
+                                    break
     #print(time.time()-t)
     return possible_moves
 
@@ -192,7 +182,7 @@ def get_possible_moves_beetle(state):
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
                                                  state.board.width)
-    if move_away_wont_break_hive(state):
+    if type(state.hexa_selected) is Stack or move_away_wont_break_hive(state):
         for r, c in neighbours_of_selected:
             neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
             if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour, [(state.hexa_selected.r, state.hexa_selected.c)], state):
@@ -252,7 +242,7 @@ def make_move(state, to_row, to_col, fromm_board):
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     dest_t = type(state.board.board[to_row][to_col])
     if dest_t is not Blank:
-        # Must be a beetle
+        # Must be a beetle making move
         # Check if selected is just a beetle or a stack
         if type(state.hexa_selected) is Stack:
             beetle = state.hexa_selected.remove_piece()

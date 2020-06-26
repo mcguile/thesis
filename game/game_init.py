@@ -185,9 +185,26 @@ class Game:
             pygame.display.update()
             self.clock.tick(30)
 
+    def make_random_move_from_board(self):
+        moves = dict()
+        for row in range(self.state.board.height):
+            for col, hexa in enumerate(self.state.board.board[row]):
+                if type(hexa) is not Blank and hexa.player == self.state.players_turn:
+                    self.state.hexa_selected = hexa
+                    rf, cf = self.state.hexa_selected.r, self.state.hexa_selected.c
+                    poss_moves = list(get_possible_moves_from_board(self.state))
+                    if len(poss_moves) > 0:
+                        moves[(rf, cf)] = poss_moves
+        move_from = random.choice(list(moves.keys()))
+        move = random.choice(moves[move_from])
+        row, col = move[0], move[1]
+        rf, cf = move_from
+        self.state.hexa_selected = self.state.board.board[rf][cf]
+        make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.board)
+        return f'{rf}, {cf} to {row}, {col}'
+
     def run_game(self):
         move_from = None
-        action = None
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -202,18 +219,23 @@ class Game:
                             self.state = self.state.prev_state
                             self.deselect()
                         elif event.key == K_LEFT:
-                            while str(action) != '(4, 8 to 10, 11)':#not isGameOver(self.state):
-                                print('\nMCTS is searching for the best action...')
-                                mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
-                                action = mcts_.search(init_state=self.state)
-                                if action.r_f < 0:
-                                    action.r_f = abs(action.r_f)-1
-                                    self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
-                                    make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
+                            while not isGameOver(self.state):
+                                if self.state.players_turn == -1:
+                                    print('\nWhite')
+                                    print('MCTS is searching for the best action...')
+                                    mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
+                                    action = mcts_.search(init_state=self.state)
+                                    if action.r_f < 0:
+                                        action.r_f = abs(action.r_f)-1
+                                        self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
+                                        make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
+                                    else:
+                                        self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
+                                        make_move(self.state, action.r_t, action.c_t, self.state.board)
+                                    print(action)
                                 else:
-                                    self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
-                                    make_move(self.state, action.r_t, action.c_t, self.state.board)
-                                print(action)
+                                    print('\nBlack')
+                                    print(self.make_random_move_from_board())
                                 self.draw_game()
                                 pygame.display.update()
                                 self.clock.tick(30)
@@ -258,5 +280,5 @@ class Game:
 
 pygame.init()
 game = Game(time_limit=None, iter_limit=5)
-game.generate_random_full_board(seed=13)
+game.generate_random_full_board(seed=1)
 game.run_game()

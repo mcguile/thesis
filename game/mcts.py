@@ -2,18 +2,17 @@ import time
 import math
 import random
 
+
 def random_policy(state):
-    # while not state.is_terminal():
-    #     possible_actions = state.get_possible_actions()
-    #     action = random.choice(possible_actions) if len(possible_actions) > 0 else None
-    #     state = state.take_action(action)
-    # return state.get_reward()
     while not state.is_terminal():
         try:
             action = random.choice(state.get_possible_actions())
         except IndexError:
             raise Exception('No possible actions for non-terminal state ' + str(state))
         state = state.take_action(action)
+    reward = state.get_reward()
+    if reward != 0:
+        print('REWARD ', state.get_reward())
     return state.get_reward()
 
 

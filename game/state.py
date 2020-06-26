@@ -7,7 +7,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None):
-        self.limit = 10
+        self.depth_limit = 100
         self.board = board if board else Board(16, 16)
         self.start_tiles = start_tiles if start_tiles else Board(6, 5, True)
         self.players_turn = W
@@ -24,7 +24,6 @@ class State:
         return self.players_turn
 
     def get_possible_actions(self):
-        # s = deepcopy(self)
         possible_moves = []
         # BOARD
         for row in range(self.board.height):
@@ -58,28 +57,22 @@ class State:
         return possible_moves
 
     def take_action(self, action):
-        # print(action, self.board.board[action.r_f][action.c_f])
+        print(action, self.players_turn)
         new_state = deepcopy(self)
         new_state.plies_checked += 1
-        if not action:
-            new_state.players_turn = opp(new_state.players_turn)
-        else:
+        if action:
             if action.r_f < 0:
                 #  We are moving from a rack
                 new_state.hexa_selected = new_state.start_tiles.board[abs(action.r_f)-1][action.c_f]
                 make_move(new_state, action.r_t, action.c_t, new_state.start_tiles)
-                # new_state.board.board[action.r_t][action.c_t] = new_state.start_tiles.board[abs(action.r_f)-1][action.c_f]
             else:
                 #  We are moving from the board
                 new_state.hexa_selected = new_state.board.board[action.r_f][action.c_f]
                 make_move(new_state, action.r_t, action.c_t, new_state.board)
-                # new_state.board.board[action.r_t][action.c_t] = new_state.board.board[action.r_f][action.c_f]
-            # new_state.board.board[action.r_f][action.c_f] = Blank()
-            new_state.players_turn = opp(new_state.players_turn)
         return new_state
 
     def depth_limit_reached(self):
-        if self.limit and self.plies_checked == self.limit:
+        if self.depth_limit and self.plies_checked == self.depth_limit:
             self.plies_checked = 0
             return True
         return False
@@ -92,4 +85,4 @@ class State:
             return -1
         elif has_won(self, B):
             return 1
-        return False
+        return 0
