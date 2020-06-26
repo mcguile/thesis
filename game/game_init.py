@@ -280,5 +280,5 @@ class Game:
 
 pygame.init()
 game = Game(time_limit=None, iter_limit=5)
-game.generate_random_full_board(seed=1)
+game.generate_random_full_board(seed=12)
 game.run_game()

@@ -15,7 +15,7 @@ def opp(player):
 
 
 def get_hexa_neighbours(r, c, state):
-    neighbours = []
+    neighbours = set()
     non_blank_neighbours = 0
     min_r, max_r, min_c, max_c = get_minmax_rowcol(r, c, state.board.height, state.board.width)
     for row in range(min_r, max_r + 1):
@@ -27,11 +27,9 @@ def get_hexa_neighbours(r, c, state):
             elif (c % 2 == 1) and ((col == c - 1 and row == r - 1) or (row == r - 1 and col == c + 1)):
                 continue
             else:
-                hexa = state.board.board[row][col]
-                hexa.r, hexa.c = row, col
-                if type(hexa) is not Blank:
+                if type(state.board.board[row][col]) is not Blank and state.hexa_selected != state.board.board[row][col]:
                     non_blank_neighbours += 1
-                neighbours.append(hexa)
+                neighbours.add((row, col))
     return neighbours, non_blank_neighbours > 4
 
 
@@ -74,6 +72,17 @@ def breaks_freedom_to_move(r, c, R, C, state):
             hex_is_not_blank(R, C + 1, state) and hex_is_not_blank(R+1, C, state)
 
 
+def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
+    """
+    Returns true if all neighbours of (r,c) are blank excluding the currently selected
+    hexagon which is also a neighbour of (r,c).
+    """
+    for row, col in neighbours:
+        if type(state.board.board[row][col]) is not Blank and (row, col) not in blocked:
+            return False
+    return True
+
+
 def move_away_wont_break_hive(state):
     if type(state.hexa_selected) is Stack:
         return False
@@ -95,62 +104,44 @@ def move_away_wont_break_hive(state):
 def get_possible_moves_bee(state):
     t = time.time()
     possible_moves = set()
-    neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
-                                                 state.board.width)
-    if move_away_wont_break_hive(state):
-        for r, c in neighbours_of_selected:
-            if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
-                continue
-            if type(state.board.board[r][c]) is Blank:
-                neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
-                if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
-                                                             [(state.hexa_selected.r, state.hexa_selected.c)], state):
-                    possible_moves.add((r, c))
+    neighbours_of_selected, cant_move = get_hexa_neighbours(state.hexa_selected.r, state.hexa_selected.c, state)
+    if not cant_move:
+        if move_away_wont_break_hive(state):
+            for (r, c) in neighbours_of_selected:
+                if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
+                    continue
+                if type(state.board.board[r][c]) is Blank:
+                    neighbours_of_neighbour, _ = get_hexa_neighbours(r, c, state)
+                    for (r_, c_) in neighbours_of_neighbour:
+                        if type(state.board.board[r_][c_]) is not Blank and \
+                                (r_, c_) != (state.hexa_selected.r, state.hexa_selected.c) and \
+                                (r_, c_) not in possible_moves and \
+                                (r_, c_) in neighbours_of_selected:
+                            possible_moves.add((r, c))
     #print(time.time()-t)
     return possible_moves
 
 
-def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
-    """
-    Returns true if all neighbours of (r,c) are blank excluding the currently selected
-    hexagon which is also a neighbour of (r,c).
-    """
-    for row, col in neighbours:
-        if type(state.board.board[row][col]) is not Blank and (row, col) not in blocked:
-            return False
-    return True
-
-
 def get_possible_moves_spider(state):
-    # TODO FIX
+    # do Bee move three times
     t = time.time()
     possible_moves = set()
-    if move_away_wont_break_hive(state):
-        # Spider must move three spaces and only three spaces.
-        # Logic is to iterate nested three times for each hexagon
-        # in a set of neighbours that are blank and dont break the hive.
-        n1_of_spider = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
-                                           state.board.width)
-        for r1, c1 in n1_of_spider:
-            n2_of_spider = get_cell_neighbours(r1, c1, state.board.height, state.board.width)
-            from_lst = [(state.hexa_selected.r, state.hexa_selected.c)]
-            if type(state.board.board[r1][c1]) is Blank and not breaks_freedom_to_move(r1, c1, state.hexa_selected.r, state.hexa_selected.c, state) and \
-                    not all_neighbours_but_selected_are_blank(n2_of_spider, from_lst, state):
-                for r2, c2 in n2_of_spider:
-                    if r2 == r1 and c2 == c1:
-                        continue
-                    n3_of_spider = get_cell_neighbours(r2, c2, state.board.height, state.board.width)
-                    from_lst.append((r1, c1))
-                    if type(state.board.board[r2][c2]) is Blank and not breaks_freedom_to_move(r2, c2, r1, c1, state) and \
-                            not all_neighbours_but_selected_are_blank(n3_of_spider, from_lst, state):
-                        for r3, c3 in n3_of_spider:
-                            if r3 == r2 and c3 == c2 or r3 == r1 and c3 == c1:
-                                continue
-                            n4_of_spider = get_cell_neighbours(r3, c3, state.board.height, state.board.width)
-                            from_lst.append((r2, c2))
-                            if type(state.board.board[r3][c3]) is Blank and not breaks_freedom_to_move(r3, c3, r2, c2, state) and \
-                                    not all_neighbours_but_selected_are_blank(n4_of_spider, from_lst, state):
-                                possible_moves.add((r3, c3))
+    o = state.hexa_selected
+    r, c = state.hexa_selected.r, state.hexa_selected.c
+    for (r1, c1) in get_possible_moves_bee(state):#
+        state.hexa_selected.r, state.hexa_selected.c = r1, c1
+        state.board.board[r][c] = Blank()
+        for (r2, c2) in get_possible_moves_bee(state):
+            if (r2, c2) == (r, c):
+                continue
+            state.hexa_selected.r, state.hexa_selected.c = r2, c2
+            state.board.board[r1][c1] = Blank()
+            for (r3, c3) in get_possible_moves_bee(state):
+                if (r3, c3) == (r, c) or (r3, c3) == (r1, c1):
+                    continue
+                possible_moves.add((r3, c3))
+    state.hexa_selected.r, state.hexa_selected.c = r, c
+    state.board.board[r][c] = o
     # print(time.time()-t)
     return possible_moves
 
@@ -169,8 +160,8 @@ def get_possible_moves_ant(state):
                     if type(state.board.board[n_r][n_c]) is Blank:
                         hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
                         if not surrounded_five_plus:
-                            for hexa in hexa_neighbours:
-                                if type(hexa) is Blank and not breaks_freedom_to_move(hexa.r, hexa.c, n_r, n_c, state):
+                            for (r_, c_) in hexa_neighbours:
+                                if type(state.board.board[r_][c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
                                     possible_moves.add((n_r, n_c))
                                     break
     #print(time.time()-t)
