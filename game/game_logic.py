@@ -169,6 +169,7 @@ def get_possible_moves_ant(state):
 
 
 def get_possible_moves_beetle(state):
+    # TODO broken
     t = time.time()
     possible_moves = set()
     neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
@@ -289,8 +290,10 @@ def player_able_to_move(state):
 
 
 def set_player_turn(state):
-    if state.players_turn == W and state.start_tiles.board_count_w > 0 or \
-            state.players_turn == B and state.start_tiles.board_count_b > 0:
+    # if state.players_turn == W and state.start_tiles.board_count_w > 0 or \
+    #         state.players_turn == B and state.start_tiles.board_count_b > 0:
+    #     return
+    if state.board.board_count < 2:
         return
     elif not player_able_to_move(state):
         state.players_turn = opp(state.players_turn)
@@ -330,18 +333,27 @@ def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
 
 
+# def get_reward(state):
+#     count_n_w = 0
+#     count_n_b = 0
+#     for n in get_cell_neighbours(*state.bee_pos_white, state.board.height, state.board.width):
+#         hexa = state.board.board[n[0]][n[1]]
+#         if type(hexa) is not Blank:
+#             count_n_w += 1
+#     for n in get_cell_neighbours(*state.bee_pos_black, state.board.height, state.board.width):
+#         hexa = state.board.board[n[0]][n[1]]
+#         if type(hexa) is not Blank:
+#             count_n_b += 1
+#     return (1/6) * count_n_w - (1/6) * count_n_b
+
+
 def get_reward(state):
-    count_n_w = 0
-    count_n_b = 0
-    for n in get_cell_neighbours(*state.bee_pos_white, state.board.height, state.board.width):
-        hexa = state.board.board[n[0]][n[1]]
-        if type(hexa) is not Blank:
-            count_n_w += 1
+    count = 0
     for n in get_cell_neighbours(*state.bee_pos_black, state.board.height, state.board.width):
         hexa = state.board.board[n[0]][n[1]]
         if type(hexa) is not Blank:
-            count_n_b += 1
-    return (1/6) * count_n_w - (1/6) * count_n_b
+            count += 1
+    return (-1/6) * count  # Negative for white to win
 
 
 def has_won(state, player):

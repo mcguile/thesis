@@ -7,7 +7,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None):
-        self.depth_limit = 10
+        self.depth_limit = 2
         self.board = board if board else Board(16, 16)
         self.start_tiles = start_tiles if start_tiles else Board(6, 5, True)
         self.players_turn = W

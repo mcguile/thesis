@@ -4,7 +4,7 @@ import pygame
 from board import *
 from state import State
 from game_logic import *
-from mcts import MCTS
+from mcts1 import MCTS
 import numpy as np
 import random
 
@@ -219,7 +219,7 @@ class Game:
                             self.state = self.state.prev_state
                             self.deselect()
                         elif event.key == K_LEFT:
-                            while not isGameOver(self.state):
+                            # while not isGameOver(self.state):
                                 if self.state.players_turn == -1:
                                     print('\nWhite')
                                     print('MCTS is searching for the best action...')
@@ -236,9 +236,9 @@ class Game:
                                 else:
                                     print('\nBlack')
                                     print(self.make_random_move_from_board())
-                                self.draw_game()
-                                pygame.display.update()
-                                self.clock.tick(30)
+                                # self.draw_game()
+                                # pygame.display.update()
+                                # self.clock.tick(30)
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
                             if self.mouse_pos.collidepoint(event.pos):
@@ -279,6 +279,26 @@ class Game:
 
 
 pygame.init()
-game = Game(time_limit=None, iter_limit=5)
-game.generate_random_full_board(seed=12)
+game = Game(time_limit=None, iter_limit=200)
+
+testboard = Board(16, 16)
+testboard.board[8][6] = Bee(player=W, row=8, col=6)
+testboard.board[7][7] = Grasshopper(player=W, row=7, col=7)
+testboard.board[8][8] = Bee(player=W, row=8, col=8)
+testboard.board[8][9] = Beetle(player=W,row=8,col=9)
+testboard.board[9][7] = Beetle(player=B, row=9,col=7)
+testboard.board[9][8] = Bee(player=B, row=9, col=8)
+testboard.board[9][9] = Beetle(player=B, row=9, col=9)
+testboard.board[10][8] = Grasshopper(player=B, row=10, col=8)
+testboard.board[10][9] = Grasshopper(player=B, row=10, col=9)
+game.state.bee_pos_black = [9, 8]
+game.first_move_black = False
+game.first_move_white = False
+game.state.turn_count_black = 5
+game.state.turn_count_white = 4
+testboard.board_count = 9
+game.state.board = testboard
+
+
+# game.generate_random_full_board(seed=12)
 game.run_game()

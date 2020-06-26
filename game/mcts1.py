@@ -3,14 +3,19 @@ import math
 import random
 
 
-def random_policy(state):
+def random_policy(state, starting_action):
     while not state.is_terminal():
         try:
             action = random.choice(state.get_possible_actions())
         except IndexError:
+            print('ah feck')
+            time.sleep(1000000)
             raise Exception('No possible actions for non-terminal state ' + str(state))
         state = state.take_action(action)
-    return state.get_reward()
+    reward = state.get_reward()
+    # print(starting_action, reward)
+    # print()
+    return reward
 
 
 class Node:
@@ -51,8 +56,8 @@ class MCTS:
         return self.get_action(self.root, best_child)
 
     def execute_round(self):
-        node = self.select_node(self.root)
-        reward = self.rollout_policy(node.state)
+        node, starting_action = self.select_node(self.root)
+        reward = self.rollout_policy(node.state, starting_action)
         self.backprop(node, reward)
 
     def select_node(self, node):
@@ -61,7 +66,7 @@ class MCTS:
                 node = self.get_best_child(node)
             else:
                 return self.expand(node)
-        return node
+        return node, None
 
     def expand(self, node):
         actions = node.state.get_possible_actions()
@@ -71,7 +76,7 @@ class MCTS:
                 node.children[action] = new_node
                 if len(actions) == len(node.children):
                     node.is_fully_expanded = True
-                return new_node
+                return new_node, action
         raise Exception("Unreachable code reached")
 
     def backprop(self, node, reward):
