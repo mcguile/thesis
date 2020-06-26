@@ -7,7 +7,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None):
-        self.depth_limit = 100
+        self.depth_limit = 10
         self.board = board if board else Board(16, 16)
         self.start_tiles = start_tiles if start_tiles else Board(6, 5, True)
         self.players_turn = W
@@ -57,7 +57,6 @@ class State:
         return possible_moves
 
     def take_action(self, action):
-        print(action, self.players_turn)
         new_state = deepcopy(self)
         new_state.plies_checked += 1
         if action:
@@ -81,8 +80,4 @@ class State:
         return isGameOver(self) or self.depth_limit_reached()
 
     def get_reward(self):
-        if has_won(self, W):
-            return -1
-        elif has_won(self, B):
-            return 1
-        return 0
+        return get_reward(self)

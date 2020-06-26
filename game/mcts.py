@@ -10,9 +10,6 @@ def random_policy(state):
         except IndexError:
             raise Exception('No possible actions for non-terminal state ' + str(state))
         state = state.take_action(action)
-    reward = state.get_reward()
-    if reward != 0:
-        print('REWARD ', state.get_reward())
     return state.get_reward()
 
 
