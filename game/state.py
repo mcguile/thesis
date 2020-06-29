@@ -7,7 +7,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None):
-        self.depth_limit = 2
+        self.depth_limit = 6
         self.board = board if board else Board(16, 16)
         self.start_tiles = start_tiles if start_tiles else Board(6, 5, True)
         self.players_turn = W
@@ -54,9 +54,11 @@ class State:
         #                 for move in targets:
         #                     possible_moves.append(
         #                         Action(player=s.players_turn, r_f=-row - 1, c_f=col, r_t=move[0], c_t=move[1]))
+        # print(self.players_turn, ' POSSIBLE MOVES: ', possible_moves)
         return possible_moves
 
     def take_action(self, action):
+        # print('TAKE ACTION: ', action)
         new_state = deepcopy(self)
         new_state.plies_checked += 1
         if action:

@@ -1,21 +1,7 @@
 import time
 import math
-import random
-
-
-def random_policy(state, starting_action):
-    while not state.is_terminal():
-        try:
-            action = random.choice(state.get_possible_actions())
-        except IndexError:
-            print('ah feck')
-            time.sleep(1000000)
-            raise Exception('No possible actions for non-terminal state ' + str(state))
-        state = state.take_action(action)
-    reward = state.get_reward()
-    # print(starting_action, reward)
-    # print()
-    return reward
+import ray
+import numpy as np
 
 
 class Node:
@@ -30,12 +16,12 @@ class Node:
 
 
 class MCTS:
-    def __init__(self, time_limit=None, iter_limit=None, exploration_const=math.sqrt(2), rollout_policy=random_policy):
-        self.root = None
+    def __init__(self, time_limit=None, iter_limit=None, exploration_const=1/math.sqrt(2)):
         self.time_limit = time_limit
         self.iter_limit = iter_limit
         self.exploration_const = exploration_const
-        self.rollout_policy = rollout_policy
+        self.best_val = float('-inf')
+        self.rollout_policy = self.random_policy
         if time_limit and iter_limit:
             raise ValueError('Cannot have time limit and iteration limit. Choose one.')
         elif not time_limit and not iter_limit:
@@ -43,20 +29,23 @@ class MCTS:
         elif iter_limit and iter_limit < 1:
             raise ValueError('Iteration limit must be greater than one.')
 
+    @ray.remote
     def search(self, init_state):
-        self.root = Node(init_state, None)
+        root = Node(init_state, None)
         if self.time_limit:
             time_limit = time.time() + self.time_limit/1000
             while time.time() < time_limit:
                 self.execute_round()
         else:
             for _ in range(self.iter_limit):
-                self.execute_round()
-        best_child = self.get_best_child(self.root)
-        return self.get_action(self.root, best_child)
+                self.execute_round(root)
+            # print(self.action_reward)
+        return root
+        # best_child = self.get_best_child(root)
+        # return self.get_action(root, best_child)
 
-    def execute_round(self):
-        node, starting_action = self.select_node(self.root)
+    def execute_round(self, root):
+        node, starting_action = self.select_node(root)
         reward = self.rollout_policy(node.state, starting_action)
         self.backprop(node, reward)
 
@@ -90,15 +79,43 @@ class MCTS:
         best_nodes = []
         for child in node.children.values():
             node_val = node.state.get_current_player() * child.total_reward / child.num_visits + \
-                       self.exploration_const * math.sqrt(math.log(node.num_visits) / child.num_visits)
+                       self.exploration_const * math.sqrt(2*math.log(node.num_visits) / child.num_visits)
             if node_val > best_val:
                 best_val = node_val
                 best_nodes = [child]
             elif node_val == best_val:
                 best_nodes.append(child)
-        return random.choice(best_nodes)
+        return np.random.choice(best_nodes)
 
     def get_action(self, root, best_child):
         for action, node in root.children.items():
             if node is best_child:
+                # print(best_child.total_reward)
                 return action
+
+    def random_policy(self, state, starting_action):
+        while not state.is_terminal():
+            try:
+                action = np.random.choice(state.get_possible_actions())
+            except IndexError:
+                print('ah feck')
+                time.sleep(1000000)
+                raise Exception('No possible actions for non-terminal state ' + str(state))
+            state = state.take_action(action)
+        reward = state.get_reward()
+        # print(self.searchname, np.random.randint(99), starting_action, reward)
+        # print()
+        return reward
+
+    def multiprocess_search(self, state):
+        # processes = {}
+        # for i in range(2):
+        #     processes[f'process{i}'] = self.search.remote(self, state)
+        results = ray.get([self.search.remote(self, state) for _ in range(10)])
+        root = results[0]
+        for node in results[1:]:
+            for action, child in node.children.items():
+                root.children[action].total_reward += child.total_reward
+                root.children[action].num_visits += child.num_visits
+        best_child = self.get_best_child(root)
+        return self.get_action(root, best_child)
