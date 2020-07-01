@@ -1,5 +1,21 @@
-16/06/2020 - 23/06/2020
+#### 24/06/2020 - 01/07/2020
+Known Bugs:
+- Selection from rack not highlighted - functionality not affected
+- Beetle is occasionally broken - reason unknown, need investigation
+- Insect (Ant noted) can occasionally slide into space that breaks Freedom-to-move rule
 
+Notes:
+- Speed optimised for MCTS by profiling the code - deep copies were the source of major slowdowns
+- Freedom to move rule was completely wrong - now fixed
+- Numbers can be displayed over the board for debugging purposes (N key) - the format is (row, col) NOT (x, y)
+- Bee fixed
+- Spider fixed and is now based on three Bee movements
+- Reward for MCTS is proportional to the number of (any player) pieces surrounding opponent queen
+- MCTS is now parallelised using Ray and Root Parallelisation - multiple trees are created and the summation root nodes gives the final best move
+- Positions of placed pieces are now stored to save time iterating over the whole board during MCTS (<12 iterations vs 256).
+
+
+#### 16/06/2020 - 23/06/2020
 Known bugs:
 - ~~Beetle was allowed to break hive~~
 - Selection from rack not highlighted - functionality not affected

@@ -308,6 +308,6 @@ class Game:
 
 pygame.init()
 game = Game(time_limit=None, iter_limit=100)
-use_testboard()
-# game.generate_random_full_board(seed=3)
+# use_testboard()
+game.generate_random_full_board(seed=3)
 game.run_game()
