@@ -17,6 +17,8 @@ class State:
         self.bee_pos_white, self.bee_pos_black = (0, 3), (3, 3)
         self.turn_count_white, self.turn_count_black = 0, 0
         self.plies_checked = 0
+        self.white_positions = set()
+        self.black_positions = set()
         self.possible_moves = set()
         self.prev_state = None
 
@@ -26,13 +28,12 @@ class State:
     def get_possible_actions(self):
         possible_moves = []
         # BOARD
-        for row in range(self.board.height):
-            for col, hexa in enumerate(self.board.board[row]):
-                if hexa.player == self.players_turn:
-                    self.hexa_selected = hexa
-                    for move in get_possible_moves_from_board(self):
-                        possible_moves.append(
-                            Action(player=self.players_turn, r_f=row, c_f=col, r_t=move[0], c_t=move[1]))
+        positions = self.black_positions if self.players_turn == 1 else self.white_positions
+        for r, c in positions:
+            self.hexa_selected = self.board.board[r][c]
+            for r_t, c_t in get_possible_moves_from_board(self):
+                possible_moves.append(
+                    Action(player=self.players_turn, r_f=r, c_f=c, r_t=r_t, c_t=c_t))
         # RACK
         # disabled due to huge increase in time for decision making
         # start, stop = get_rack_inidices(s.players_turn)

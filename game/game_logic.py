@@ -3,7 +3,6 @@ from count_hives import HiveGraph
 from copy import deepcopy
 from utils import *
 import time
-import pprofile
 
 
 W = -1
@@ -147,6 +146,7 @@ def get_possible_moves_spider(state):
 
 
 def get_possible_moves_ant(state):
+    # TODO broken
     t = time.time()
     possible_moves = set()
     if not move_away_wont_break_hive(state):
@@ -264,7 +264,6 @@ def make_move(state, to_row, to_col, fromm_board):
                 fromm_board.board[f_row][f_col] = state.hexa_selected
             state.hexa_selected = beetle
         state.board.board[to_row][to_col] = state.hexa_selected
-        state.board.board[to_row][to_col].r, state.board.board[to_row][to_col].c = to_row, to_col
         if type(state.hexa_selected) == Bee:
             if state.players_turn == W:
                 state.bee_placed_white = True
@@ -272,6 +271,14 @@ def make_move(state, to_row, to_col, fromm_board):
             else:
                 state.bee_placed_black = True
                 state.bee_pos_black = [to_row, to_col]
+
+    state.hexa_selected.r, state.hexa_selected.c = to_row, to_col
+    if state.players_turn == W:
+        state.white_positions.discard((f_row, f_col))
+        state.white_positions.add((to_row, to_col))
+    else:
+        state.black_positions.discard((f_row, f_col))
+        state.black_positions.add((to_row, to_col))
     increment_turn_count(state)
     state.players_turn = opp(state.players_turn)
     set_player_turn(state)
@@ -331,7 +338,6 @@ def is_bee_placed(state, player):
 
 def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
-
 
 # def get_reward(state):
 #     count_n_w = 0

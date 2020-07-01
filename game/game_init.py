@@ -1,4 +1,6 @@
 import sys
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.locals import *
 import pygame
 from board import *
@@ -41,6 +43,28 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
     elif blit_possible:
         img.blit(pygame.image.load('../img_assets/possible.png'), (0, 0))
     return img
+
+
+def use_testboard():
+    testboard = Board(16, 16)
+    testboard.board[8][6] = Bee(player=W, row=8, col=6)
+    testboard.board[7][7] = Grasshopper(player=W, row=7, col=7)
+    testboard.board[8][8] = Bee(player=W, row=8, col=8)
+    testboard.board[8][9] = Beetle(player=W, row=8, col=9)
+    testboard.board[9][7] = Beetle(player=B, row=9, col=7)
+    testboard.board[9][8] = Bee(player=B, row=9, col=8)
+    testboard.board[9][9] = Beetle(player=B, row=9, col=9)
+    testboard.board[10][8] = Grasshopper(player=B, row=10, col=8)
+    testboard.board[10][9] = Grasshopper(player=B, row=10, col=9)
+    game.state.bee_pos_black = [9, 8]
+    game.state.white_positions = {(8, 6), (7, 7), (8, 8), (8, 9)}
+    game.state.black_positions = {(9, 7), (9, 8), (9, 9), (10, 8), (10, 9)}
+    game.first_move_black = False
+    game.first_move_white = False
+    game.state.turn_count_black = 5
+    game.state.turn_count_white = 4
+    testboard.board_count = 9
+    game.state.board = testboard
 
 
 class Game:
@@ -284,25 +308,6 @@ class Game:
 
 pygame.init()
 game = Game(time_limit=None, iter_limit=100)
-
-# testboard = Board(16, 16)
-# testboard.board[8][6] = Bee(player=W, row=8, col=6)
-# testboard.board[7][7] = Grasshopper(player=W, row=7, col=7)
-# testboard.board[8][8] = Bee(player=W, row=8, col=8)
-# testboard.board[8][9] = Beetle(player=W,row=8,col=9)
-# testboard.board[9][7] = Beetle(player=B, row=9,col=7)
-# testboard.board[9][8] = Bee(player=B, row=9, col=8)
-# testboard.board[9][9] = Beetle(player=B, row=9, col=9)
-# testboard.board[10][8] = Grasshopper(player=B, row=10, col=8)
-# testboard.board[10][9] = Grasshopper(player=B, row=10, col=9)
-# game.state.bee_pos_black = [9, 8]
-# game.first_move_black = False
-# game.first_move_white = False
-# game.state.turn_count_black = 5
-# game.state.turn_count_white = 4
-# testboard.board_count = 9
-# game.state.board = testboard
-
-
-game.generate_random_full_board(seed=3)
+use_testboard()
+# game.generate_random_full_board(seed=3)
 game.run_game()

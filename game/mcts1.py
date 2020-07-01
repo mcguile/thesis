@@ -2,6 +2,7 @@ import time
 import math
 import ray
 import numpy as np
+import multiprocessing
 
 
 class Node:
@@ -108,10 +109,9 @@ class MCTS:
         return reward
 
     def multiprocess_search(self, state):
-        # processes = {}
-        # for i in range(2):
-        #     processes[f'process{i}'] = self.search.remote(self, state)
-        results = ray.get([self.search.remote(self, state) for _ in range(10)])
+        num_processes = multiprocessing.cpu_count()-1 or 1
+        print(f'Executing {num_processes} parallel processes.')
+        results = ray.get([self.search.remote(self, state) for _ in range(num_processes)])
         root = results[0]
         for node in results[1:]:
             for action, child in node.children.items():
