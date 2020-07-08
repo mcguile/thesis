@@ -1,9 +1,15 @@
-#### 24/06/2020 - 01/07/2020
 Known Bugs:
 - Selection from rack not highlighted - functionality not affected
 - Beetle is occasionally broken - reason unknown, need investigation
 - Insect (Ant noted) can occasionally slide into space that breaks Freedom-to-move rule
 
+#### 02/07/2020 - 08/07/2020
+Notes:
+- Refactored `game_init` to `game_playbyplay_ui` and moved any non-PyGame code to `game_logic`
+- Created `game_fullrun_no_ui` as entry point to play a complete game with two computer players using random moves, MCTS, or Swarm AI
+- Researched possible design and implementation of Swarm AI
+
+#### 24/06/2020 - 01/07/2020
 Notes:
 - Speed optimised for MCTS by profiling the code - deep copies were the source of major slowdowns
 - Freedom to move rule was completely wrong - now fixed
@@ -18,7 +24,6 @@ Notes:
 #### 16/06/2020 - 23/06/2020
 Known bugs:
 - ~~Beetle was allowed to break hive~~
-- Selection from rack not highlighted - functionality not affected
 
 Notes:
 - Option to start game with all pieces on the board in random state with seed
