@@ -3,6 +3,7 @@ from count_hives import HiveGraph
 from copy import deepcopy
 from utils import *
 import time
+import random
 
 
 W = -1
@@ -224,14 +225,18 @@ def get_possible_moves_from_board(state):
 
 
 def make_move(state, to_row, to_col, fromm_board):
+    #state.prev_state = deepcopy(state)
+    f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     if fromm_board == state.start_tiles:
+        if f_row >= 3:
+            state.black_pieces_start.remove((f_row, f_col))
+        else:
+            state.white_pieces_start.remove((f_row, f_col))
         if state.players_turn == W:
             state.start_tiles.board_count_w -= 1
         else:
             state.start_tiles.board_count_b -= 1
         state.board.board_count += 1
-    state.prev_state = deepcopy(state)
-    f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     dest_t = type(state.board.board[to_row][to_col])
     if dest_t is not Blank:
         # Must be a beetle making move
@@ -417,3 +422,73 @@ def get_rack_inidices(player):
         return 0, 3
     else:
         return 3, 6
+
+
+def generate_random_full_board(state, seed):
+    print('Generating random board state...')
+    random.seed(seed)
+    random.shuffle(state.white_pieces_start)
+    random.shuffle(state.black_pieces_start)
+    row, col = state.white_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[row][col]
+    make_move(state=state, to_row=8, to_col=8, fromm_board=state.start_tiles)
+    row, col = state.black_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[row][col]
+    make_move(state=state, to_row=9, to_col=8, fromm_board=state.start_tiles)
+    state.first_move_white = False
+    state.first_move_black = False
+    while state.board.board_count < 22:
+        make_random_move_from_rack(state)
+    print('Random board state generated.')
+
+
+def make_random_move_from_board(state):
+    moves = dict()
+    for row in range(state.board.height):
+        for col, hexa in enumerate(state.board.board[row]):
+            if type(hexa) is not Blank and hexa.player == state.players_turn:
+                state.hexa_selected = hexa
+                rf, cf = state.hexa_selected.r, state.hexa_selected.c
+                poss_moves = list(get_possible_moves_from_board(state))
+                if len(poss_moves) > 0:
+                    moves[(rf, cf)] = poss_moves
+    move_from = random.choice(list(moves.keys()))
+    move = random.choice(moves[move_from])
+    row, col = move[0], move[1]
+    rf, cf = move_from
+    state.hexa_selected = state.board.board[rf][cf]
+    make_move(state=state, to_row=row, to_col=col, fromm_board=state.board)
+    return f'{rf}, {cf} to {row}, {col}'
+
+
+def make_random_move_from_rack(state):
+    if state.players_turn == W and not state.bee_placed_white and state.turn_count_white == 3:
+        state.hexa_selected = state.start_tiles.board[0][3]
+        move = random.choice(list(get_possible_moves_from_rack(state)))
+        row, col = move[0], move[1]
+        make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+    elif state.players_turn == B and not state.bee_placed_black and state.turn_count_black == 3:
+        state.hexa_selected = state.start_tiles.board[3][3]
+        move = random.choice(list(get_possible_moves_from_rack(state)))
+        row, col = move[0], move[1]
+        make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+    else:
+        row, col = state.white_pieces_start[-1] if state.players_turn == W else state.black_pieces_start[-1]
+        state.hexa_selected = state.start_tiles.board[row][col]
+        move = random.choice(list(get_possible_moves_from_rack(state)))
+        row, col = move[0], move[1]
+        make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+
+
+def make_random_move_from_anywhere(state):
+    i = random.getrandbits(1)
+    if i == 0 and \
+            ((state.players_turn == -1 and len(state.white_pieces_start) > 0) or
+             (state.players_turn == 1 and len(state.black_pieces_start) > 0)):
+        try:
+            make_random_move_from_rack(state)
+        except IndexError:
+            # Occurs if a player cannot legally move from rack but still has rack pieces
+            make_random_move_from_board(state)
+    else:
+        make_random_move_from_board(state)

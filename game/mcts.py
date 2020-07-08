@@ -104,13 +104,12 @@ class MCTS:
                 raise Exception('No possible actions for non-terminal state ' + str(state))
             state = state.take_action(action)
         reward = state.get_reward()
-        # print(self.searchname, np.random.randint(99), starting_action, reward)
-        # print()
         return reward
 
     def multiprocess_search(self, state):
         num_processes = multiprocessing.cpu_count()-1 or 1
-        print(f'Executing {num_processes} parallel processes.')
+        p_t, p_p = (state.turn_count_white, "White") if state.players_turn == -1 else (state.turn_count_black, "Black")
+        print(f'MCTS - Executing {num_processes} parallel processes for {p_p} turn {p_t}')
         results = ray.get([self.search.remote(self, state) for _ in range(num_processes)])
         root = results[0]
         for node in results[1:]:

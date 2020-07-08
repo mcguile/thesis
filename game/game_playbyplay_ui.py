@@ -1,15 +1,16 @@
 import sys
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.locals import *
 import pygame
 from board import *
 from state import State
 from game_logic import *
-from mcts1 import MCTS
+from mcts import MCTS
 import numpy as np
 import random
 import ray
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 
 ray.init()
@@ -59,8 +60,8 @@ def use_testboard():
     game.state.bee_pos_black = [9, 8]
     game.state.white_positions = {(8, 6), (7, 7), (8, 8), (8, 9)}
     game.state.black_positions = {(9, 7), (9, 8), (9, 9), (10, 8), (10, 9)}
-    game.first_move_black = False
-    game.first_move_white = False
+    game.state.first_move_black = False
+    game.state.first_move_white = False
     game.state.turn_count_black = 5
     game.state.turn_count_white = 4
     testboard.board_count = 9
@@ -93,8 +94,6 @@ class Game:
         self.time_limit = time_limit
         self.iter_limit = iter_limit
         self.state = State()
-        self.first_move_white = True
-        self.first_move_black = True
 
     def draw_rack_tiles(self):
         y = 0
@@ -166,71 +165,6 @@ class Game:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
-    def player_able_to_move(self):
-        s = deepcopy(self.state)
-        for row in range(s.board.height):
-            for col, hexa in enumerate(s.board.board[row]):
-                if hexa.player == s.players_turn:
-                    s.hexa_selected = hexa
-                    if len(get_possible_moves_from_board(s)) > 0:
-                        return True
-        return False
-
-    def generate_random_full_board(self, seed):
-        random.seed(seed)
-        white_pieces = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (0, 3), (0, 4), (1, 4)]
-        black_pieces = [(3, 0), (4, 0), (5, 0), (3, 1), (4, 1), (3, 2), (4, 2), (5, 2), (3, 3), (3, 4), (4, 4)]
-        random.shuffle(white_pieces)
-        random.shuffle(black_pieces)
-        row, col = white_pieces.pop()
-        self.state.hexa_selected = self.state.start_tiles.board[row][col]
-        make_move(state=self.state, to_row=8, to_col=8, fromm_board=self.state.start_tiles)
-        row, col = black_pieces.pop()
-        self.state.hexa_selected = self.state.start_tiles.board[row][col]
-        make_move(state=self.state, to_row=9, to_col=8, fromm_board=self.state.start_tiles)
-        self.first_move_white = False
-        self.first_move_black = False
-        while self.state.board.board_count < 22:
-            if self.state.players_turn == W and not self.state.bee_placed_white and self.state.turn_count_white == 3:
-                self.state.hexa_selected = self.state.start_tiles.board[0][3]
-                white_pieces.remove((0, 3))
-                move = random.choice(list(get_possible_moves_from_rack(self.state)))
-                row, col = move[0], move[1]
-                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
-            elif self.state.players_turn == B and not self.state.bee_placed_black and self.state.turn_count_black == 3:
-                self.state.hexa_selected = self.state.start_tiles.board[3][3]
-                black_pieces.remove((3, 3))
-                move = random.choice(list(get_possible_moves_from_rack(self.state)))
-                row, col = move[0], move[1]
-                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
-            else:
-                row, col = white_pieces.pop() if self.state.players_turn == W else black_pieces.pop()
-                self.state.hexa_selected = self.state.start_tiles.board[row][col]
-                move = random.choice(list(get_possible_moves_from_rack(self.state)))
-                row, col = move[0], move[1]
-                make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.start_tiles)
-            self.draw_game()
-            pygame.display.update()
-            self.clock.tick(30)
-
-    def make_random_move_from_board(self):
-        moves = dict()
-        for row in range(self.state.board.height):
-            for col, hexa in enumerate(self.state.board.board[row]):
-                if type(hexa) is not Blank and hexa.player == self.state.players_turn:
-                    self.state.hexa_selected = hexa
-                    rf, cf = self.state.hexa_selected.r, self.state.hexa_selected.c
-                    poss_moves = list(get_possible_moves_from_board(self.state))
-                    if len(poss_moves) > 0:
-                        moves[(rf, cf)] = poss_moves
-        move_from = random.choice(list(moves.keys()))
-        move = random.choice(moves[move_from])
-        row, col = move[0], move[1]
-        rf, cf = move_from
-        self.state.hexa_selected = self.state.board.board[rf][cf]
-        make_move(state=self.state, to_row=row, to_col=col, fromm_board=self.state.board)
-        return f'{rf}, {cf} to {row}, {col}'
-
     def run_game(self):
         move_from = None
         while True:
@@ -243,38 +177,37 @@ class Game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == K_n:
                             self.numbers = not self.numbers
-                        elif event.key == K_BACKSPACE and self.state.turn_count_black > 3:
-                            self.state = self.state.prev_state
-                            self.deselect()
+                        # elif event.key == K_BACKSPACE and self.state.turn_count_black > 3:
+                        #     self.state = self.state.prev_state
+                        #     self.deselect()
                         elif event.key == K_LEFT:
-                            # while not isGameOver(self.state):
-                                if self.state.players_turn == -1:
-                                    print('\nWhite')
-                                    print('MCTS is searching for the best action...')
-                                    mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
-                                    action = mcts_.multiprocess_search(self.state)
-                                    if action.r_f < 0:
-                                        action.r_f = abs(action.r_f)-1
-                                        self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
-                                        make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
-                                    else:
-                                        self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
-                                        make_move(self.state, action.r_t, action.c_t, self.state.board)
-                                    print(action)
+                            if self.state.players_turn == -1:
+                                print('\nWhite')
+                                print('MCTS is searching for the best action...')
+                                mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
+                                action = mcts_.multiprocess_search(self.state)
+                                print(action.r_f)
+                                if action.r_f < 0:
+                                    action.r_f = abs(action.r_f)-1
+                                    self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
+                                    make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
+                                    print("start tiles")
                                 else:
-                                    print('\nBlack')
-                                    print(self.make_random_move_from_board())
-                                # self.draw_game()
-                                # pygame.display.update()
-                                # self.clock.tick(30)
+                                    self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
+                                    make_move(self.state, action.r_t, action.c_t, self.state.board)
+                                    print("board")
+                                print(action)
+                            else:
+                                print('\nBlack')
+                                print(make_random_move_from_board(self.state))
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
                             if self.mouse_pos.collidepoint(event.pos):
                                 self.deselect()
                             else:
                                 move_to_board(self.state, event, move_from)
-                                if self.first_move_black and black_has_moved(self.state):
-                                    self.first_move_black = False
+                                if self.state.first_move_black and black_has_moved(self.state):
+                                    self.state.first_move_black = False
                         else:
                             mouse_x, mouse_y = event.pos
                             if self.state.turn_count_white == 3 and self.state.players_turn == W and not is_bee_placed(self.state, W):
@@ -285,8 +218,8 @@ class Game:
                                     3].rect.centery
                             if mouse_y < self.rack_pixel_height or mouse_y > self.pixel_height - self.rack_pixel_height:
                                 move_from = self.state.start_tiles
-                                if self.first_move_white:
-                                    self.first_move_white = move_white_first(self.state, self.first_move_white, event)
+                                if self.state.first_move_white:
+                                    self.state.first_move_white = move_white_first(self.state, self.state.first_move_white, event)
                                 else:
                                     self.select_from_rack_tiles((mouse_x, mouse_y))
                             else:
@@ -294,7 +227,7 @@ class Game:
                                 self.select_from_board(event)
 
                             if self.state.hexa_selected:
-                                if self.first_move_black:
+                                if self.state.first_move_black:
                                     self.state.possible_moves = get_possible_first_moves_black(self.state)
                                 elif move_from.height <= 6:
                                     self.state.possible_moves = get_possible_moves_from_rack(self.state)
@@ -309,5 +242,5 @@ class Game:
 pygame.init()
 game = Game(time_limit=None, iter_limit=100)
 # use_testboard()
-game.generate_random_full_board(seed=3)
+#generate_random_full_board(game.state, seed=3)
 game.run_game()
