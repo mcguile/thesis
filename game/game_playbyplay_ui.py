@@ -241,6 +241,6 @@ class Game:
 
 pygame.init()
 game = Game(time_limit=None, iter_limit=100)
-# use_testboard()
+use_testboard()
 #generate_random_full_board(game.state, seed=3)
 game.run_game()
