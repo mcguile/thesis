@@ -232,7 +232,6 @@ def get_possible_moves_from_board(state):
 
 
 def make_move(state, to_row, to_col, fromm_board):
-    #state.prev_state = deepcopy(state)
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
     if fromm_board == state.start_tiles:
         if f_row >= 3:
@@ -431,9 +430,10 @@ def get_rack_inidices(player):
         return 3, 6
 
 
-def generate_random_full_board(state, seed):
+def generate_random_full_board(state, seed=None):
     print('Generating random board state...')
-    random.seed(seed)
+    if seed:
+        random.seed(seed)
     random.shuffle(state.white_pieces_start)
     random.shuffle(state.black_pieces_start)
     row, col = state.white_pieces_start[-1]

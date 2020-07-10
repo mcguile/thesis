@@ -1,87 +1,66 @@
+from utils import distance_between_hex_cells
 import random
+import numpy as np
+from game import make_move
+
+w = 0.5
+c1 = 0.8
+c2 = 0.9
 
 
 class Particle:
-    def __init__(self, x0, insect):
-        self.insect = insect
-        self.velocity_i = []  # particle velocity
-        self.pos_best_i = []  # best position individual
-        self.err_best_i = -1  # best error individual
-        self.err_i = -1  # error individual
+    def __init__(self, pos):
+        self.pos = np.array(list(pos), dtype=float)
+        self.pbest_pos = self.pos
+        self.pbest_value = float('inf')
+        self.vel = np.array([0., 0.])
 
-        for i in range(2):
-            self.velocity_i.append(random.uniform(-1, 1))  # X and Y velocities
+    def __str__(self):
+        print(self.pos, " - my best is ", self.pbest_pos)
 
-    # evaluate current fitness
-    def evaluate(self, get_fitness):
-        self.err_i = get_fitness((self.insect.r, self.insect.c))
-
-        # check to see if the current position is an individual best
-        if self.err_i < self.err_best_i or self.err_best_i == -1:
-            self.pos_best_i = (self.insect.r, self.insect.c)
-            self.err_best_i = self.err_i
-
-    # update new particle velocity
-    def update_velocity(self, pos_best_g):
-        w = 0.5  # constant inertia weight (how much to weigh the previous velocity)
-        c1 = 1  # cognitive constant
-        c2 = 2  # social constant
-
-        position = (self.insect.r, self.insect.c)
-        for i in range(2):
-            r1 = random.random()
-            r2 = random.random()
-
-            vel_cognitive = c1 * r1 * (self.pos_best_i[i] - position[i])
-            vel_social = c2 * r2 * (pos_best_g[i] - position[i])
-            self.velocity_i[i] = w * self.velocity_i[i] + vel_cognitive + vel_social
-
-    # update the particle position based off new velocity updates
-    def update_position(self, bounds):
-        position = (self.insect.r, self.insect.c)
-        for i in range(2):
-            position[i] = position[i] + self.velocity_i[i]
-
-            # adjust maximum position if necessary
-            if position[i] > bounds[i][1]:
-                self.position_i[i] = bounds[i][1]
-
-            # adjust minimum position if neseccary
-            if self.position_i[i] < bounds[i][0]:
-                self.position_i[i] = bounds[i][0]
+    def move(self):
+        # TODO convert self.vel to new self.vel based on direction and column
+        self.pos += self.vel
 
 
-class PSO:
-    def __init__(self, get_fitness, x0, bounds, num_particles, maxiter):
+class Space:
+    def __init__(self, state):
+        self.state = state
+        self.target = self.state.bee_pos_black
+        self.particles = [Particle(pos) for pos in self.state.white_positions]
+        self.gbest_value = float('inf')
+        self.gbest_pos = [0, 0]
 
-        err_best_g = -1  # best error for group
-        pos_best_g = []  # best position for group
+    def print_particles(self):
+        for particle in self.particles:
+            particle.__str__()
 
-        # establish the swarm
-        swarm = []
-        for i in range(0, num_particles):
-            swarm.append(Particle(x0))
+    def fitness(self, particle):
+        return distance_between_hex_cells(particle.pos, self.target)
 
-        # begin optimization loop
-        i = 0
-        while i < maxiter:
-            # print i,err_best_g
-            # cycle through particles in swarm and evaluate fitness
-            for j in range(0, num_particles):
-                swarm[j].evaluate(get_fitness)
+    def set_pbest(self):
+        for particle in self.particles:
+            best_fitness_candidate = self.fitness(particle)
+            if particle.pbest_value > best_fitness_candidate:
+                particle.pbest_value = best_fitness_candidate
+                particle.pbest_pos = particle.pos
 
-                # determine if current particle is the best (globally)
-                if swarm[j].err_i < err_best_g or err_best_g == -1:
-                    pos_best_g = list(swarm[j].position_i)
-                    err_best_g = float(swarm[j].err_i)
+    def set_gbest(self):
+        for particle in self.particles:
+            best_fitness_candidate = self.fitness(particle)
+            if self.gbest_value > best_fitness_candidate:
+                self.gbest_value = best_fitness_candidate
+                self.gbest_pos = particle.pos
 
-            # cycle through swarm and update velocities and position
-            for j in range(0, num_particles):
-                swarm[j].update_velocity(pos_best_g)
-                swarm[j].update_position(bounds)
-            i += 1
-
-        # print final results
-        print('FINAL:')
-        print(pos_best_g)
-        print(err_best_g)
+    def move_particles(self):
+        for particle in self.particles:
+            from_r, from_c = particle.pos
+            new_velocity = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
+                           (random.random() * c2) * (self.gbest_pos - particle.pos)
+            # print("position ", particle.pos, "new velocity ", new_velocity)
+            new_velocity[0] = min(1, round(new_velocity[0])) if new_velocity[0] > 0 else max(-1,round(new_velocity[0]))
+            new_velocity[1] = min(1, round(new_velocity[1])) if new_velocity[1] > 0 else max(-1,round(new_velocity[1]))
+            particle.vel = new_velocity
+            print("position ", particle.pos, "new velocity ", new_velocity)
+            particle.move()
+            yield [(int(from_r), int(from_c)), (int(particle.pos[0]), int(particle.pos[1]))]

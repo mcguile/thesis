@@ -1,6 +1,8 @@
 from board import Board
 from action import Action
 from game import *
+from copy import deepcopy
+
 W = -1
 B = 1
 

@@ -1,3 +1,4 @@
+from math import floor
 NW = 'North-West'
 NE = 'North-East'
 SE = 'South-East'
@@ -79,3 +80,13 @@ def get_hexas_straight_line(fromm, w, h, direction=ALL):
         return hexas_sw
     else:
         return hexas_nw
+
+
+def distance_between_hex_cells(cell1, cell2):
+    r1, c1 = cell1
+    r2, c2 = cell2
+    x0 = r1 - floor(c1 / 2)
+    x1 = r2 - floor(c2 / 2)
+    dx = x1 - x0
+    dy = c2 - c1
+    return max(abs(dx), abs(dy), abs(dx + dy))

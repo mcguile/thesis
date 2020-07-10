@@ -6,6 +6,7 @@ from board import *
 from game import *
 from mcts import MCTS
 import numpy as np
+from swarm import Space
 import ray
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -123,7 +124,7 @@ class UI:
                 y += 30 if c % 2 == 0 else -30
                 x += 52
                 if self.numbers:
-                    text = self.font.render(str(r) + ' ' + str(c), True, (255, 255, 255))
+                    text = self.font.render(str(r) + ' ' + str(c), True, (255, 0, 0))
                     yn = y-10 if c % 2 == 0 else y+60
                     self.drag_surf.blit(text, (x-35, yn))
             y_o += 60
@@ -216,11 +217,26 @@ class UI:
                         # elif event.key == K_BACKSPACE and self.game.state.turn_count_black > 3:
                         #     self.game.state = self.game.state.prev_state
                         #     self.deselect()
+                        elif event.key == K_RIGHT:
+                            space = Space(self.game.state)
+                            space.set_pbest()
+                            space.set_gbest()
+                            for move in space.move_particles():
+                                f_r, f_c = move[0][0], move[0][1]
+                                t_r, t_c = move[1][0], move[1][1]
+                                self.game.state.hexa_selected = self.game.state.board.board[f_r][f_c]
+                                if (t_r,t_c) in get_possible_moves_from_board(self.game.state):
+                                    make_move(self.game.state,t_r,t_c,self.game.state.board)
+                                    self.draw_game()
+                                    pygame.display.update()
+                                    self.clock.tick(30)
+                                    time.sleep(1)
+                                self.game.state.players_turn = -1
                         elif event.key == K_LEFT:
                             if self.game.state.players_turn == -1:
                                 print('\nWhite')
                                 print('MCTS is searching for the best action...')
-                                mcts_ = MCTS(time_limit=self.time_limit, iter_limit=self.iter_limit)
+                                mcts_ = MCTS(time_limit=self.game.time_limit, iter_limit=self.game.iter_limit)
                                 action = mcts_.multiprocess_search(self.game.state)
                                 print(action.r_f)
                                 if action.r_f < 0:
@@ -283,6 +299,10 @@ pygame.init()
 g = Game(time_limit=None, iter_limit=100)
 ui = UI(g)
 # use_testboard()
-#generate_random_full_board(src.state, seed=3)
-# ui.playbyplay()
-ui.play_full_game(player_random, player_random)
+generate_random_full_board(g.state)
+
+
+## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
+
+ui.playbyplay()
+# ui.play_full_game(player_random, player_random)
