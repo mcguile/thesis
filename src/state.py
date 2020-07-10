@@ -1,6 +1,6 @@
 from board import Board
 from action import Action
-from game_logic import *
+from game import *
 W = -1
 B = 1
 

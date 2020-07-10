@@ -1,6 +1,6 @@
 from insects import *
 from count_hives import HiveGraph
-from copy import deepcopy
+from state import State
 from utils import *
 import time
 import random
@@ -8,6 +8,13 @@ import random
 
 W = -1
 B = 1
+
+
+class Game:
+    def __init__(self, time_limit, iter_limit):
+        self.time_limit = time_limit
+        self.iter_limit = iter_limit
+        self.state = State()
 
 
 def opp(player):
@@ -492,3 +499,26 @@ def make_random_move_from_anywhere(state):
             make_random_move_from_board(state)
     else:
         make_random_move_from_board(state)
+
+
+def make_first_move_each(state):
+    random.shuffle(state.white_pieces_start)
+    random.shuffle(state.black_pieces_start)
+    row, col = state.white_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[row][col]
+    make_move(state=state, to_row=8, to_col=8, fromm_board=state.start_tiles)
+    row, col = state.black_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[row][col]
+    make_move(state=state, to_row=9, to_col=8, fromm_board=state.start_tiles)
+    state.first_move_white = False
+    state.first_move_black = False
+
+
+def make_mcts_move(state, action):
+    if action.r_f < 0:
+        action.r_f = abs(action.r_f) - 1
+        state.hexa_selected = state.start_tiles.board[action.r_f][action.c_f]
+        make_move(state, action.r_t, action.c_t, state.start_tiles)
+    else:
+        state.hexa_selected = state.board.board[action.r_f][action.c_f]
+        make_move(state, action.r_t, action.c_t, state.board)
