@@ -184,11 +184,25 @@ def get_possible_moves_ant(state):
                         if not surrounded_five_plus:
                             for (r_, c_) in hexa_neighbours:
                                 if type(state.board.board[r_][
-                                            c_]) is Blank:  # and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
+                                            c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
                                     possible_moves.add((n_r, n_c))
                                     break
     # print(time.time()-t)
     return possible_moves
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_possible_moves_beetle(state):
@@ -583,10 +597,14 @@ def nearest_move_after_vel(new_pos, possible_moves, goal):
         if d1 < closest_dist_seen:
             closest_dist_seen = distance_between_(pos1, move)
             final_pos = move
+        elif d1 == closest_dist_seen:
+            final_pos = move if distance_between_(move, goal) < distance_between_(final_pos, goal) else final_pos
         if pos2:
             d2 = distance_between_(pos2, move)
             if d2 < closest_dist_seen:
                 closest_dist_seen = distance_between_(pos2, move)
                 final_pos = move
+            elif d2 == closest_dist_seen:
+                final_pos = move if distance_between_(move, goal) < distance_between_(final_pos, goal) else final_pos
 
     return final_pos
