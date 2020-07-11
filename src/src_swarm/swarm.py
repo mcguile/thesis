@@ -1,7 +1,6 @@
-from utils import distance_between_hex_cells
+from utils import distance_between_hex_cells, transform_cell_pos_from_velocity
 import random
 import numpy as np
-from game import make_move
 
 w = 0.5
 c1 = 0.8
@@ -10,10 +9,10 @@ c2 = 0.9
 
 class Particle:
     def __init__(self, pos):
-        self.pos = np.array(list(pos), dtype=float)
+        self.pos = np.array(list(pos), dtype=int)
         self.pbest_pos = self.pos
         self.pbest_value = float('inf')
-        self.vel = np.array([0., 0.])
+        self.vel = np.array([0, 0])
 
     def __str__(self):
         print(self.pos, " - my best is ", self.pbest_pos)
@@ -21,6 +20,14 @@ class Particle:
     def move(self):
         # TODO convert self.vel to new self.vel based on direction and column
         self.pos += self.vel
+
+
+def convert_vel_beetle(vel):
+    if vel > 0.25:
+        return 1
+    if vel < -0.25:
+        return -1
+    return 0
 
 
 class Space:
@@ -53,14 +60,13 @@ class Space:
                 self.gbest_pos = particle.pos
 
     def move_particles(self):
+        print()
         for particle in self.particles:
             from_r, from_c = particle.pos
-            new_velocity = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
+            new_vel = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
                            (random.random() * c2) * (self.gbest_pos - particle.pos)
-            # print("position ", particle.pos, "new velocity ", new_velocity)
-            new_velocity[0] = min(1, round(new_velocity[0])) if new_velocity[0] > 0 else max(-1,round(new_velocity[0]))
-            new_velocity[1] = min(1, round(new_velocity[1])) if new_velocity[1] > 0 else max(-1,round(new_velocity[1]))
-            particle.vel = new_velocity
-            print("position ", particle.pos, "new velocity ", new_velocity)
-            particle.move()
-            yield [(int(from_r), int(from_c)), (int(particle.pos[0]), int(particle.pos[1]))]
+            print("position ", particle.pos, "new velocity ", new_vel)
+            new_vel[0] = convert_vel_beetle(new_vel[0])
+            new_vel[1] = convert_vel_beetle(new_vel[1])
+            new_vel = new_vel.astype(int)
+            yield particle, (from_r, from_c), new_vel, transform_cell_pos_from_velocity(new_vel, particle.pos)

@@ -233,6 +233,15 @@ def get_possible_moves_from_board(state):
 
 def make_move(state, to_row, to_col, fromm_board):
     f_row, f_col = state.hexa_selected.r, state.hexa_selected.c
+    if state.players_turn == W:
+        if type(fromm_board.board[f_row][f_col]) is not Stack:
+            state.white_positions.discard((f_row, f_col))
+        state.white_positions.add((to_row, to_col))
+    else:
+        if type(fromm_board.board[f_row][f_col]) is not Stack:
+            state.black_positions.discard((f_row, f_col))
+        state.black_positions.add((to_row, to_col))
+
     if fromm_board == state.start_tiles:
         if f_row >= 3:
             state.black_pieces_start.remove((f_row, f_col))
@@ -284,12 +293,6 @@ def make_move(state, to_row, to_col, fromm_board):
                 state.bee_pos_black = [to_row, to_col]
 
     state.hexa_selected.r, state.hexa_selected.c = to_row, to_col
-    if state.players_turn == W:
-        state.white_positions.discard((f_row, f_col))
-        state.white_positions.add((to_row, to_col))
-    else:
-        state.black_positions.discard((f_row, f_col))
-        state.black_positions.add((to_row, to_col))
     increment_turn_count(state)
     state.players_turn = opp(state.players_turn)
     set_player_turn(state)

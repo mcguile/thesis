@@ -6,7 +6,7 @@ from board import *
 from game import *
 from mcts import MCTS
 import numpy as np
-from swarm import Space
+from src_swarm.swarm import Space
 import ray
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -221,12 +221,16 @@ class UI:
                             space = Space(self.game.state)
                             space.set_pbest()
                             space.set_gbest()
-                            for move in space.move_particles():
-                                f_r, f_c = move[0][0], move[0][1]
-                                t_r, t_c = move[1][0], move[1][1]
+                            for particle, from_pos, new_vel, set_of_new_pos in space.move_particles():
+                                f_r, f_c = from_pos
                                 self.game.state.hexa_selected = self.game.state.board.board[f_r][f_c]
-                                if (t_r,t_c) in get_possible_moves_from_board(self.game.state):
-                                    make_move(self.game.state,t_r,t_c,self.game.state.board)
+                                common_pos = set_of_new_pos & get_possible_moves_from_board(self.game.state)
+                                if common_pos:
+                                    r, c = random.choice(list(common_pos))
+                                    make_move(self.game.state, r, c, self.game.state.board)
+                                    print("moving ", (f_r, f_c), " to ", (r,c))
+                                    particle.vel = new_vel
+                                    particle.move()
                                     self.draw_game()
                                     pygame.display.update()
                                     self.clock.tick(30)

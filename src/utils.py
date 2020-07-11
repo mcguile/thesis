@@ -90,3 +90,55 @@ def distance_between_hex_cells(cell1, cell2):
     dx = x1 - x0
     dy = c2 - c1
     return max(abs(dx), abs(dy), abs(dx + dy))
+
+
+def transform_cell_pos_from_velocity(vel, pos):
+    r_pos, c_pos = pos
+    r, c = vel
+    if c == 0 and r == 0:
+        return {(r_pos, c_pos)}
+    if c == 0:
+        # North / South
+        if r > 0:
+            return {(r_pos+1, c_pos)}
+        else:
+            return {(r_pos-1, c_pos)}
+    if r == 0:
+        # West
+        if c < 0:
+            if c_pos % 2 == 0:
+                return {(r_pos-1, c_pos-1), (r_pos, c_pos-1)}
+            else:
+                return {(r_pos, c_pos-1), (r_pos+1, c_pos-1)}
+        # East
+        if c > 0:
+            if c_pos % 2 == 0:
+                return {(r_pos-1, c_pos+1), (r_pos, c_pos+1)}
+            else:
+                return {(r_pos, c_pos+1), (r_pos+1, c_pos+1)}
+    if r < 0:
+        # North-West
+        if c < 0:
+            if c_pos % 2 == 0:
+                return {(r_pos-1, c_pos-1)}
+            else:
+                return {(r_pos, c_pos-1)}
+        # North-East
+        if c > 0:
+            if c_pos % 2 == 0:
+                return {(r_pos-1, c_pos+1)}
+            else:
+                return {(r_pos, c_pos+1)}
+    if r > 0:
+        # South-West
+        if c < 0:
+            if c_pos % 2 == 0:
+                return {(r_pos, c_pos-1)}
+            else:
+                return {(r_pos+1, c_pos-1)}
+        # South-East
+        if c > 0:
+            if c_pos % 2 == 0:
+                return {(r_pos, c_pos+1)}
+            else:
+                return {(r_pos+1, c_pos+1)}
