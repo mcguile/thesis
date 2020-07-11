@@ -92,53 +92,68 @@ def distance_between_hex_cells(cell1, cell2):
     return max(abs(dx), abs(dy), abs(dx + dy))
 
 
-def transform_cell_pos_from_velocity(vel, pos):
-    r_pos, c_pos = pos
+def direction(vel):
     r, c = vel
     if c == 0 and r == 0:
-        return {(r_pos, c_pos)}
+        return None
     if c == 0:
-        # North / South
         if r > 0:
-            return {(r_pos+1, c_pos)}
+            return 'S'
         else:
-            return {(r_pos-1, c_pos)}
+            return 'N'
     if r == 0:
-        # West
         if c < 0:
-            if c_pos % 2 == 0:
-                return {(r_pos-1, c_pos-1), (r_pos, c_pos-1)}
-            else:
-                return {(r_pos, c_pos-1), (r_pos+1, c_pos-1)}
-        # East
-        if c > 0:
-            if c_pos % 2 == 0:
-                return {(r_pos-1, c_pos+1), (r_pos, c_pos+1)}
-            else:
-                return {(r_pos, c_pos+1), (r_pos+1, c_pos+1)}
+            return 'W'
+        else:
+            return 'E'
     if r < 0:
-        # North-West
         if c < 0:
-            if c_pos % 2 == 0:
-                return {(r_pos-1, c_pos-1)}
-            else:
-                return {(r_pos, c_pos-1)}
-        # North-East
-        if c > 0:
-            if c_pos % 2 == 0:
-                return {(r_pos-1, c_pos+1)}
-            else:
-                return {(r_pos, c_pos+1)}
+            return 'NW'
+        else:
+            return 'NE'
     if r > 0:
-        # South-West
         if c < 0:
-            if c_pos % 2 == 0:
-                return {(r_pos, c_pos-1)}
-            else:
-                return {(r_pos+1, c_pos-1)}
-        # South-East
-        if c > 0:
-            if c_pos % 2 == 0:
-                return {(r_pos, c_pos+1)}
-            else:
-                return {(r_pos+1, c_pos+1)}
+            return 'SW'
+        else:
+            return 'SE'
+
+
+def transform_cell_pos_from_velocity(vel, pos):
+    r_pos, c_pos = pos
+    d = direction(vel)
+    if not d:
+        return {(r_pos, c_pos)}
+    elif d == 'S':
+        return {(r_pos+1, c_pos)}
+    elif d == 'N':
+        return {(r_pos-1, c_pos)}
+    elif d == 'W':
+        if c_pos % 2 == 0:
+            return {(r_pos-1, c_pos-1), (r_pos, c_pos-1)}
+        else:
+            return {(r_pos, c_pos-1), (r_pos+1, c_pos-1)}
+    elif d == 'E':
+        if c_pos % 2 == 0:
+            return {(r_pos-1, c_pos+1), (r_pos, c_pos+1)}
+        else:
+            return {(r_pos, c_pos+1), (r_pos+1, c_pos+1)}
+    elif d == 'NW':
+        if c_pos % 2 == 0:
+            return {(r_pos-1, c_pos-1)}
+        else:
+            return {(r_pos, c_pos-1)}
+    elif d == 'NE':
+        if c_pos % 2 == 0:
+            return {(r_pos-1, c_pos+1)}
+        else:
+            return {(r_pos, c_pos+1)}
+    elif d == 'SW':
+        if c_pos % 2 == 0:
+            return {(r_pos, c_pos-1)}
+        else:
+            return {(r_pos+1, c_pos-1)}
+    elif d == 'SE':
+        if c_pos % 2 == 0:
+            return {(r_pos, c_pos+1)}
+        else:
+            return {(r_pos+1, c_pos+1)}

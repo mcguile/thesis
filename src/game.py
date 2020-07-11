@@ -525,3 +525,45 @@ def make_mcts_move(state, action):
     else:
         state.hexa_selected = state.board.board[action.r_f][action.c_f]
         make_move(state, action.r_t, action.c_t, state.board)
+
+
+def convert_vel(vel, insect_type):
+    new_vel = []
+    v_threshold = 0.25
+    for value in vel:
+        v = floor(value)
+        if value - v > v_threshold:
+            v += 1
+        elif value - v < -v_threshold:
+            v -= 1
+        if insect_type is Bee or insect_type is Beetle:
+            if v < 0:
+                new_vel.append(-1)
+            else:
+                new_vel.append(1)
+        else:
+            new_vel.append(v)
+    return new_vel
+
+
+def closest_move_to_target(new_pos, possible_moves):
+    pos1 = new_pos.pop()
+    pos2 = None if not new_pos else new_pos.pop()
+    # maximum TWO positions in new_pos
+    closest_dist_global = float('inf')
+    closest_dist1 = float('inf')
+    closest_dist2 = float('inf')
+    final_pos = None
+    for move in possible_moves:
+        d1 = distance_between_hex_cells(pos1, move)
+        if d1 < closest_dist1:
+            closest_dist1 = d1
+        if pos2:
+            d2 = distance_between_hex_cells(pos2, move)
+            if d2 < closest_dist2:
+                closest_dist2 = d2
+        closest = min(closest_dist1, closest_dist2)
+        if closest < closest_dist_global:
+            final_pos = move
+            closest_dist_global = closest
+    return final_pos

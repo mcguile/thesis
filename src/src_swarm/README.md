@@ -15,3 +15,9 @@
 - Fixed game logic bug where a position is removed from set of known positions after move made when it was a stack
 - Beetle appears to successfully converge towards the opponent bee, limited by the rules of the game
     - Demonstrated by hardcoding so black cannot move and white repeatedly moves
+
+- Trials with Ants
+    - As ants can move any number of hexagons, the velocity vector is trimmed to the nearest int (+/- 1 if over a threshold of 0.25)
+    - When added to original position, the new position this vector gives may not be valid move for the Ant. Therefore, the nearest valid move to the desired position is selected.
+        - This has the side effect of multiple moves being equidistant to the desired position, resulting in the Ant possibly moving away from goal
+        -

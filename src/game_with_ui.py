@@ -221,12 +221,17 @@ class UI:
                             space = Space(self.game.state)
                             space.set_pbest()
                             space.set_gbest()
-                            for particle, from_pos, new_vel, set_of_new_pos in space.move_particles():
+                            for particle, from_pos, new_vel in space.move_particles():
                                 f_r, f_c = from_pos
+                                new_vel = convert_vel(new_vel, type(self.game.state.board.board[f_r][f_c]))
                                 self.game.state.hexa_selected = self.game.state.board.board[f_r][f_c]
-                                common_pos = set_of_new_pos & get_possible_moves_from_board(self.game.state)
-                                if common_pos:
-                                    r, c = random.choice(list(common_pos))
+                                set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
+                                possible_moves = get_possible_moves_from_board(self.game.state)
+                                # common_pos = set_of_new_pos & get_possible_moves_from_board(self.game.state)
+                                if possible_moves:
+                                    r, c = closest_move_to_target(set_of_new_pos, possible_moves)
+                                    # if common_pos:
+                                    #     r, c = random.choice(list(common_pos))
                                     make_move(self.game.state, r, c, self.game.state.board)
                                     print("moving ", (f_r, f_c), " to ", (r,c))
                                     particle.vel = new_vel

@@ -1,10 +1,12 @@
 from utils import distance_between_hex_cells, transform_cell_pos_from_velocity
 import random
 import numpy as np
+import math
 
 w = 0.5
 c1 = 0.8
 c2 = 0.9
+v_threshold = 0.25
 
 
 class Particle:
@@ -18,16 +20,7 @@ class Particle:
         print(self.pos, " - my best is ", self.pbest_pos)
 
     def move(self):
-        # TODO convert self.vel to new self.vel based on direction and column
         self.pos += self.vel
-
-
-def convert_vel_beetle(vel):
-    if vel > 0.25:
-        return 1
-    if vel < -0.25:
-        return -1
-    return 0
 
 
 class Space:
@@ -66,7 +59,4 @@ class Space:
             new_vel = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
                            (random.random() * c2) * (self.gbest_pos - particle.pos)
             print("position ", particle.pos, "new velocity ", new_vel)
-            new_vel[0] = convert_vel_beetle(new_vel[0])
-            new_vel[1] = convert_vel_beetle(new_vel[1])
-            new_vel = new_vel.astype(int)
-            yield particle, (from_r, from_c), new_vel, transform_cell_pos_from_velocity(new_vel, particle.pos)
+            yield particle, (from_r, from_c), new_vel
