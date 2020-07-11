@@ -4,7 +4,7 @@ from state import State
 from utils import *
 import time
 import random
-
+import math
 
 W = -1
 B = 1
@@ -34,7 +34,8 @@ def get_hexa_neighbours(r, c, state):
             elif (c % 2 == 1) and ((col == c - 1 and row == r - 1) or (row == r - 1 and col == c + 1)):
                 continue
             else:
-                if type(state.board.board[row][col]) is not Blank and state.hexa_selected != state.board.board[row][col]:
+                if type(state.board.board[row][col]) is not Blank and state.hexa_selected != state.board.board[row][
+                    col]:
                     non_blank_neighbours += 1
                 neighbours.add((row, col))
     return neighbours, non_blank_neighbours > 4
@@ -53,30 +54,42 @@ def hex_is_not_blank(r, c, state):
 
 
 def breaks_freedom_to_move(r, c, R, C, state):
-    if r == R-1 and c == C:
+    # R, C are FROM; r, c are TO
+    if r == R - 1 and c == C:
         # North
-        return hex_is_not_blank(R-1, C-1, state) and hex_is_not_blank(R-1, C+1, state) if C % 2 == 0 else \
+        return hex_is_not_blank(R - 1, C - 1, state) and hex_is_not_blank(R - 1, C + 1, state) if C % 2 == 0 else \
             hex_is_not_blank(R, C - 1, state) and hex_is_not_blank(R, C + 1, state)
-    elif r == R+1 and c == C:
+    elif r == R + 1 and c == C:
         # South
-        return hex_is_not_blank(R, C-1, state) and hex_is_not_blank(R, C+1, state) if C % 2 == 0 else \
-            hex_is_not_blank(R+1, C - 1, state) and hex_is_not_blank(R+1, C + 1, state)
-    elif r == R -1 and c == C-1:
-        # North-West
-        return hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R, C-1, state) if C % 2 == 0 else \
-            hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R+1, C - 1, state)
-    elif r == R and c == C-1:
-        # South-West
-        return hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R-1, C-1, state) if C % 2 == 0 else \
-            hex_is_not_blank(R, C - 1, state) and hex_is_not_blank(R, C + 1, state)
-    elif r == R-1 and c == C+1:
-        # North-East
-        return hex_is_not_blank(R-1, C, state) and hex_is_not_blank(R, C+1, state) if C % 2 == 0 else \
-            hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R, C - 1, state)
+        return hex_is_not_blank(R, C - 1, state) and hex_is_not_blank(R, C + 1, state) if C % 2 == 0 else \
+            hex_is_not_blank(R + 1, C - 1, state) and hex_is_not_blank(R + 1, C + 1, state)
+
+    if C % 2 == 0:
+        if r == R - 1 and c == C - 1:
+            # North-West even column
+            return hex_is_not_blank(R - 1, C, state) and hex_is_not_blank(R, C - 1, state)
+        if r == R and c == C - 1:
+            # South-West even column
+            return hex_is_not_blank(R + 1, C, state) and hex_is_not_blank(R - 1, C - 1, state)
+        if r == R - 1 and c == C + 1:
+            # North-East even column
+            return hex_is_not_blank(R - 1, C, state) and hex_is_not_blank(R, C + 1, state)
+        else:
+            # South-East even column
+            return hex_is_not_blank(R + 1, C, state) and hex_is_not_blank(R - 1, C + 1, state)
     else:
-        # South-East
-        return hex_is_not_blank(R+1, C, state) and hex_is_not_blank(R-1, C+1, state) if C % 2 == 0 else \
-            hex_is_not_blank(R, C + 1, state) and hex_is_not_blank(R+1, C, state)
+        if r == R and c == C - 1:
+            # North-West odd column
+            return hex_is_not_blank(R - 1, C, state) and hex_is_not_blank(R + 1, C - 1, state)
+        if r == R + 1 and c == C - 1:
+            # South-West odd column
+            return hex_is_not_blank(R + 1, C, state) and hex_is_not_blank(R, C - 1, state)
+        if r == R and c == C + 1:
+            # North-East odd column
+            return hex_is_not_blank(R + 1, C + 1, state) and hex_is_not_blank(R - 1, C, state)
+        else:
+            # South-East odd column
+            return hex_is_not_blank(R, C + 1, state) and hex_is_not_blank(R + 1, C, state)
 
 
 def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
@@ -93,7 +106,8 @@ def all_neighbours_but_selected_are_blank(neighbours, blocked, state):
 def move_away_wont_break_hive(state):
     if type(state.hexa_selected) is Stack:
         return False
-    neighbours = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height, state.board.width)
+    neighbours = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
+                                     state.board.width)
     count_nonblank_neighbours = 0
     for r, c in neighbours:
         if type(state.board.board[r][c]) is not Blank:
@@ -109,15 +123,15 @@ def move_away_wont_break_hive(state):
 
 
 def get_possible_moves_bee(state):
-    t = time.time()
+    # t = time.time()
     possible_moves = set()
     neighbours_of_selected, cant_move = get_hexa_neighbours(state.hexa_selected.r, state.hexa_selected.c, state)
     if not cant_move:
         if move_away_wont_break_hive(state):
             for (r, c) in neighbours_of_selected:
-                if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
-                    continue
                 if type(state.board.board[r][c]) is Blank:
+                    if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
+                        continue
                     neighbours_of_neighbour, _ = get_hexa_neighbours(r, c, state)
                     for (r_, c_) in neighbours_of_neighbour:
                         if type(state.board.board[r_][c_]) is not Blank and \
@@ -125,17 +139,17 @@ def get_possible_moves_bee(state):
                                 (r_, c_) not in possible_moves and \
                                 (r_, c_) in neighbours_of_selected:
                             possible_moves.add((r, c))
-    #print(time.time()-t)
+    # print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_spider(state):
     # do Bee move three times
-    t = time.time()
+    # t = time.time()
     possible_moves = set()
     o = state.hexa_selected
     r, c = state.hexa_selected.r, state.hexa_selected.c
-    for (r1, c1) in get_possible_moves_bee(state):#
+    for (r1, c1) in get_possible_moves_bee(state):
         state.hexa_selected.r, state.hexa_selected.c = r1, c1
         state.board.board[r][c] = Blank()
         for (r2, c2) in get_possible_moves_bee(state):
@@ -154,11 +168,11 @@ def get_possible_moves_spider(state):
 
 
 def get_possible_moves_ant(state):
-    # TODO broken
+    # TODO freedom to move broken
     t = time.time()
-    possible_moves = set()
     if not move_away_wont_break_hive(state):
-        return possible_moves
+        return set()
+    possible_moves = set()
     for r, _ in enumerate(state.board.board):
         for c, hexa in enumerate(state.board.board[r]):
             if (r, c) == (state.hexa_selected.r, state.hexa_selected.c):
@@ -169,30 +183,40 @@ def get_possible_moves_ant(state):
                         hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
                         if not surrounded_five_plus:
                             for (r_, c_) in hexa_neighbours:
-                                if type(state.board.board[r_][c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
+                                if type(state.board.board[r_][
+                                            c_]) is Blank:  # and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
                                     possible_moves.add((n_r, n_c))
                                     break
-    #print(time.time()-t)
+    # print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_beetle(state):
-    # TODO broken
-    t = time.time()
+    # t = time.time()
     possible_moves = set()
-    neighbours_of_selected = get_cell_neighbours(state.hexa_selected.r, state.hexa_selected.c, state.board.height,
-                                                 state.board.width)
-    if type(state.hexa_selected) is Stack or move_away_wont_break_hive(state):
-        for r, c in neighbours_of_selected:
-            neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
-            if not all_neighbours_but_selected_are_blank(neighbours_of_neighbour, [(state.hexa_selected.r, state.hexa_selected.c)], state):
+    neighbours_of_selected, _ = get_hexa_neighbours(state.hexa_selected.r, state.hexa_selected.c, state)
+    if type(state.hexa_selected) is Stack:
+        return neighbours_of_selected
+    rf, cf = state.hexa_selected.r, state.hexa_selected.c
+    if move_away_wont_break_hive(state):
+        for (r, c) in neighbours_of_selected:
+            if type(state.board.board[r][c]) is Blank and breaks_freedom_to_move(r, c, rf, cf, state):
+                continue
+            if type(state.board.board[r][c]) is Blank:
+                neighbours_of_neighbour, _ = get_hexa_neighbours(r, c, state)
+                for (r_, c_) in neighbours_of_neighbour:
+                    if type(state.board.board[r_][c_]) is not Blank and \
+                            (r_, c_) != (state.hexa_selected.r, state.hexa_selected.c) and \
+                            (r_, c_) in neighbours_of_selected:
+                        possible_moves.add((r, c))
+            else:
                 possible_moves.add((r, c))
-    #print(time.time()-t)
+    # print(time.time()-t)
     return possible_moves
 
 
 def get_possible_moves_grasshopper(state):
-    t = time.time()
+    # t = time.time()
     possible_moves = set()
     r, c = state.hexa_selected.r, state.hexa_selected.c
     n, s, ne, se, sw, nw = get_hexas_straight_line((r, c), state.board.width, state.board.height)
@@ -210,10 +234,11 @@ def get_possible_moves_grasshopper(state):
                     neighbours_of_neighbour = get_cell_neighbours(r, c, state.board.height, state.board.width)
                     if type(state.board.board[r][c]) is Blank and \
                             not all_neighbours_but_selected_are_blank(neighbours_of_neighbour,
-                                                                 [(state.hexa_selected.r, state.hexa_selected.c)], state):
+                                                                      [(state.hexa_selected.r, state.hexa_selected.c)],
+                                                                      state):
                         possible_moves.add((r, c))
                         break
-    #print(time.time()-t)
+    # print(time.time()-t)
     return possible_moves
 
 
@@ -270,8 +295,8 @@ def make_move(state, to_row, to_col, fromm_board):
             state.board.board[to_row][to_col].add_piece(state.hexa_selected)
         else:
             state.board.board[to_row][to_col] = Stack(first_piece=state.board.board[to_row][to_col],
-                                                     stacked_piece=state.hexa_selected,
-                                                     row=to_row, col=to_col)
+                                                      stacked_piece=state.hexa_selected,
+                                                      row=to_row, col=to_col)
 
     else:
         if type(fromm_board.board[f_row][f_col]) is not Stack:
@@ -353,6 +378,7 @@ def is_bee_placed(state, player):
 def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
 
+
 # def get_reward(state):
 #     count_n_w = 0
 #     count_n_b = 0
@@ -373,7 +399,7 @@ def get_reward(state):
         hexa = state.board.board[n[0]][n[1]]
         if type(hexa) is not Blank:
             count += 1
-    return (-1/6) * count  # Negative for white to win
+    return (-1 / 6) * count  # Negative for white to win
 
 
 def has_won(state, player):
@@ -531,7 +557,7 @@ def convert_vel(vel, insect_type):
     new_vel = []
     v_threshold = 0.25
     for value in vel:
-        v = floor(value)
+        v = floor(value) if value > 0 else math.ceil(value)
         if value - v > v_threshold:
             v += 1
         elif value - v < -v_threshold:
@@ -546,24 +572,21 @@ def convert_vel(vel, insect_type):
     return new_vel
 
 
-def closest_move_to_target(new_pos, possible_moves):
+def nearest_move_after_vel(new_pos, possible_moves, goal):
+    # maximum TWO positions in new_pos due to East-West/ West-East moves
     pos1 = new_pos.pop()
     pos2 = None if not new_pos else new_pos.pop()
-    # maximum TWO positions in new_pos
-    closest_dist_global = float('inf')
-    closest_dist1 = float('inf')
-    closest_dist2 = float('inf')
+    closest_dist_seen = float('inf')
     final_pos = None
     for move in possible_moves:
-        d1 = distance_between_hex_cells(pos1, move)
-        if d1 < closest_dist1:
-            closest_dist1 = d1
-        if pos2:
-            d2 = distance_between_hex_cells(pos2, move)
-            if d2 < closest_dist2:
-                closest_dist2 = d2
-        closest = min(closest_dist1, closest_dist2)
-        if closest < closest_dist_global:
+        d1 = distance_between_(pos1, move)
+        if d1 < closest_dist_seen:
+            closest_dist_seen = distance_between_(pos1, move)
             final_pos = move
-            closest_dist_global = closest
+        if pos2:
+            d2 = distance_between_(pos2, move)
+            if d2 < closest_dist_seen:
+                closest_dist_seen = distance_between_(pos2, move)
+                final_pos = move
+
     return final_pos

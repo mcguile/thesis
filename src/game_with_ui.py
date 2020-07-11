@@ -224,22 +224,20 @@ class UI:
                             for particle, from_pos, new_vel in space.move_particles():
                                 f_r, f_c = from_pos
                                 new_vel = convert_vel(new_vel, type(self.game.state.board.board[f_r][f_c]))
-                                self.game.state.hexa_selected = self.game.state.board.board[f_r][f_c]
-                                set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
-                                possible_moves = get_possible_moves_from_board(self.game.state)
-                                # common_pos = set_of_new_pos & get_possible_moves_from_board(self.game.state)
-                                if possible_moves:
-                                    r, c = closest_move_to_target(set_of_new_pos, possible_moves)
-                                    # if common_pos:
-                                    #     r, c = random.choice(list(common_pos))
-                                    make_move(self.game.state, r, c, self.game.state.board)
-                                    print("moving ", (f_r, f_c), " to ", (r,c))
-                                    particle.vel = new_vel
-                                    particle.move()
-                                    self.draw_game()
-                                    pygame.display.update()
-                                    self.clock.tick(30)
-                                    time.sleep(1)
+                                particle.vel = new_vel
+                                if new_vel[0] != 0 or new_vel[1] != 0:
+                                    self.game.state.hexa_selected = self.game.state.board.board[f_r][f_c]
+                                    set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
+                                    possible_moves = get_possible_moves_from_board(self.game.state)
+                                    if possible_moves:
+                                        r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
+                                        print(f'nearest move to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
+                                        make_move(self.game.state, r, c, self.game.state.board)
+                                        particle.move()
+                                        self.draw_game()
+                                        pygame.display.update()
+                                        self.clock.tick(30)
+                                        time.sleep(1)
                                 self.game.state.players_turn = -1
                         elif event.key == K_LEFT:
                             if self.game.state.players_turn == -1:

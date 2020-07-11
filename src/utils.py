@@ -82,7 +82,7 @@ def get_hexas_straight_line(fromm, w, h, direction=ALL):
         return hexas_nw
 
 
-def distance_between_hex_cells(cell1, cell2):
+def distance_between_(cell1, cell2):
     r1, c1 = cell1
     r2, c2 = cell2
     x0 = r1 - floor(c1 / 2)

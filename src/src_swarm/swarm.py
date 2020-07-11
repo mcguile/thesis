@@ -1,4 +1,4 @@
-from utils import distance_between_hex_cells, transform_cell_pos_from_velocity
+from utils import distance_between_, transform_cell_pos_from_velocity
 import random
 import numpy as np
 import math
@@ -36,7 +36,7 @@ class Space:
             particle.__str__()
 
     def fitness(self, particle):
-        return distance_between_hex_cells(particle.pos, self.target)
+        return distance_between_(particle.pos, self.target)
 
     def set_pbest(self):
         for particle in self.particles:
