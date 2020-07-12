@@ -7,12 +7,12 @@ from game import *
 from mcts import MCTS
 import numpy as np
 from src_swarm.swarm import Space
-import ray
+# import ray
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 
-ray.init()
+# ray.init()
 
 W = -1
 B = 1

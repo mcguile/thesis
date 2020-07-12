@@ -168,41 +168,43 @@ def get_possible_moves_spider(state):
 
 
 def get_possible_moves_ant(state):
-    # TODO freedom to move broken
-    t = time.time()
+    # t = time.time()
     if not move_away_wont_break_hive(state):
         return set()
     possible_moves = set()
-    for r, _ in enumerate(state.board.board):
-        for c, hexa in enumerate(state.board.board[r]):
-            if (r, c) == (state.hexa_selected.r, state.hexa_selected.c):
-                continue
-            if type(state.board.board[r][c]) is not Blank:
-                for n_r, n_c in get_cell_neighbours(r, c, state.board.height, state.board.width):
-                    if type(state.board.board[n_r][n_c]) is Blank:
-                        hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
-                        if not surrounded_five_plus:
-                            for (r_, c_) in hexa_neighbours:
-                                if type(state.board.board[r_][
-                                            c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
-                                    possible_moves.add((n_r, n_c))
-                                    break
-    # print(time.time()-t)
+    rf, cf = state.hexa_selected.r, state.hexa_selected.c
+    moves = get_possible_moves_bee(state)
+
+    def recur(bee_moves):
+        for (r, c) in bee_moves:
+            if (r, c) not in possible_moves:
+                possible_moves.add((r, c))
+                state.hexa_selected.r, state.hexa_selected.c = r, c
+                bee_moves = get_possible_moves_bee(state)
+                recur(bee_moves)
+
+    recur(moves)
+    state.hexa_selected.r, state.hexa_selected.c = rf, cf
     return possible_moves
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+    # for r, _ in enumerate(state.board.board):
+    #     for c, hexa in enumerate(state.board.board[r]):
+    #         if (r, c) == (state.hexa_selected.r, state.hexa_selected.c):
+    #             continue
+    #         if type(state.board.board[r][c]) is not Blank:
+    #             for n_r, n_c in get_cell_neighbours(r, c, state.board.height, state.board.width):
+    #                 if type(state.board.board[n_r][n_c]) is Blank:
+    #                     hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
+    #                     if not surrounded_five_plus:
+    #                         for (r_, c_) in hexa_neighbours:
+    #                             if type(state.board.board[r_][
+    #                                         c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
+    #                                 possible_moves.add((n_r, n_c))
+    #                                 break
+    # print(time.time()-t)
+    return possible_moves
 
 
 def get_possible_moves_beetle(state):
