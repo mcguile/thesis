@@ -173,8 +173,9 @@ def get_possible_moves_ant(state):
         return set()
     possible_moves = set()
     rf, cf = state.hexa_selected.r, state.hexa_selected.c
+    o = state.hexa_selected
+    state.board.board[rf][cf] = Blank()
     moves = get_possible_moves_bee(state)
-
     def recur(bee_moves):
         for (r, c) in bee_moves:
             if (r, c) not in possible_moves:
@@ -185,6 +186,7 @@ def get_possible_moves_ant(state):
 
     recur(moves)
     state.hexa_selected.r, state.hexa_selected.c = rf, cf
+    state.board.board[rf][cf] = o
     return possible_moves
 
 

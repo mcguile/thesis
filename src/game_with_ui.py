@@ -204,6 +204,7 @@ class UI:
 
     def playbyplay(self):
         move_from = None
+        printed_game_result = False
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -231,7 +232,7 @@ class UI:
                                     possible_moves = get_possible_moves_from_board(self.game.state)
                                     if possible_moves:
                                         r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
-                                        print(f'nearest move to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
+                                        print(f'nearest move from {f_r, f_c} to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
                                         make_move(self.game.state, r, c, self.game.state.board)
                                         particle.move()
                                         self.draw_game()
@@ -293,10 +294,12 @@ class UI:
                                 else:
                                     self.game.state.possible_moves = get_possible_moves_from_board(self.game.state)
                 else:
-                    if has_won(self.game.state, -1):
-                        print(f"White wins after {self.game.state.turn_count_white} turns")
-                    else:
-                        print(f"Black wins after {self.game.state.turn_count_black} turns")
+                    if not printed_game_result:
+                        printed_game_result = True
+                        if has_won(self.game.state, -1):
+                            print(f"White wins after {self.game.state.turn_count_white} turns")
+                        else:
+                            print(f"Black wins after {self.game.state.turn_count_black} turns")
             self.draw_game()
             pygame.display.update()
             self.clock.tick(30)

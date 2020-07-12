@@ -58,5 +58,4 @@ class Space:
             from_r, from_c = particle.pos
             new_vel = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
                            (random.random() * c2) * (self.gbest_pos - particle.pos)
-            print("position ", particle.pos, "new velocity ", new_vel)
             yield particle, (from_r, from_c), new_vel
