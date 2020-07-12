@@ -18,17 +18,6 @@ class Board:
     def _init_start_tiles(self):
         for i in range(2):
             x, player = (0, W) if i == 0 else (3, B)
-            # self.board[0 + x][0] = Ant(player, 0 + x, 0)
-            # self.board[1 + x][0] = Ant(player, 1 + x, 0)
-            # self.board[2 + x][0] = Ant(player, 2 + x, 0)
-            # self.board[0 + x][1] = Beetle(player, 0 + x, 1)
-            # self.board[1 + x][1] = Beetle(player, 1 + x, 1)
-            # self.board[0 + x][2] = Grasshopper(player, 0 + x, 2)
-            # self.board[1 + x][2] = Grasshopper(player, 1 + x, 2)
-            # self.board[2 + x][2] = Grasshopper(player, 2 + x, 2)
-            # self.board[0 + x][3] = Bee(player, 0 + x, 3)
-            # self.board[0 + x][4] = Spider(player, 0 + x, 4)
-            # self.board[1 + x][4] = Spider(player, 1 + x, 4)
             self.board[0 + x][0] = Ant(player, 0 + x, 0)
             self.board[1 + x][0] = Ant(player, 1 + x, 0)
             self.board[2 + x][0] = Ant(player, 2 + x, 0)

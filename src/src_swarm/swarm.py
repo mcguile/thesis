@@ -36,7 +36,7 @@ class Space:
             particle.__str__()
 
     def fitness(self, particle):
-        return distance_between_(particle.pos, self.target)
+        return distance_between_(particle.pos, self.target) - 1
 
     def set_pbest(self):
         for particle in self.particles:
@@ -56,6 +56,7 @@ class Space:
         print()
         for particle in self.particles:
             from_r, from_c = particle.pos
+            print(particle.pos, particle.pbest_pos, particle.pos - particle.pbest_pos)
             new_vel = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
                            (random.random() * c2) * (self.gbest_pos - particle.pos)
             print("position ", particle.pos, "new velocity ", new_vel)

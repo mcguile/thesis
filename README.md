@@ -67,6 +67,9 @@ Notes:
         - This has the side effect of multiple moves being equidistant to the desired position, resulting in the Ant possibly moving away from goal
         - To prevent Ant moving away from goal, the nearest move to goal is chosen if there is a tie in distance to desired position
 
+- Due to the implementation of swarming for PSO, a particle does not stop when the goal is reached. It continues with some velocity and slows down spiralling into the minima (if it could move freely).
+    - A modification could be to stop once at goal but this begins to move away from swarm behaviour and more into "just head to goal if you know where it is" behaviour
+    
 TODO 
 bug exists where ant can climb insect during swarm (seen it climb beetle) (maybe other insects can do the same)
 determine communication to decide what moves first
