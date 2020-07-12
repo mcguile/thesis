@@ -29,7 +29,7 @@ class Space:
         self.target = self.state.bee_pos_black
         self.particles = [Particle(pos) for pos in self.state.white_positions]
         self.gbest_value = float('inf')
-        self.gbest_pos = [0, 0]
+        self.gbest_pos = np.array([0, 0])
 
     def print_particles(self):
         for particle in self.particles:
@@ -58,4 +58,5 @@ class Space:
             from_r, from_c = particle.pos
             new_vel = (w * particle.vel) + (c1 * random.random()) * (particle.pbest_pos - particle.pos) + \
                            (random.random() * c2) * (self.gbest_pos - particle.pos)
+            print("position ", particle.pos, "new velocity ", new_vel)
             yield particle, (from_r, from_c), new_vel

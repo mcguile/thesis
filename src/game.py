@@ -5,6 +5,7 @@ from utils import *
 import time
 import random
 import math
+import numpy as np
 
 W = -1
 B = 1
@@ -176,6 +177,7 @@ def get_possible_moves_ant(state):
     o = state.hexa_selected
     state.board.board[rf][cf] = Blank()
     moves = get_possible_moves_bee(state)
+
     def recur(bee_moves):
         for (r, c) in bee_moves:
             if (r, c) not in possible_moves:
@@ -187,25 +189,7 @@ def get_possible_moves_ant(state):
     recur(moves)
     state.hexa_selected.r, state.hexa_selected.c = rf, cf
     state.board.board[rf][cf] = o
-    return possible_moves
-
-
-
-    # for r, _ in enumerate(state.board.board):
-    #     for c, hexa in enumerate(state.board.board[r]):
-    #         if (r, c) == (state.hexa_selected.r, state.hexa_selected.c):
-    #             continue
-    #         if type(state.board.board[r][c]) is not Blank:
-    #             for n_r, n_c in get_cell_neighbours(r, c, state.board.height, state.board.width):
-    #                 if type(state.board.board[n_r][n_c]) is Blank:
-    #                     hexa_neighbours, surrounded_five_plus = get_hexa_neighbours(n_r, n_c, state)
-    #                     if not surrounded_five_plus:
-    #                         for (r_, c_) in hexa_neighbours:
-    #                             if type(state.board.board[r_][
-    #                                         c_]) is Blank and not breaks_freedom_to_move(r_, c_, n_r, n_c, state):
-    #                                 possible_moves.add((n_r, n_c))
-    #                                 break
-    # print(time.time()-t)
+    possible_moves.discard((rf, cf))
     return possible_moves
 
 
@@ -334,7 +318,6 @@ def make_move(state, to_row, to_col, fromm_board):
             else:
                 state.bee_placed_black = True
                 state.bee_pos_black = [to_row, to_col]
-
     state.hexa_selected.r, state.hexa_selected.c = to_row, to_col
     increment_turn_count(state)
     state.players_turn = opp(state.players_turn)
@@ -587,7 +570,7 @@ def convert_vel(vel, insect_type):
                 new_vel.append(1)
         else:
             new_vel.append(v)
-    return new_vel
+    return np.array(new_vel)
 
 
 def nearest_move_after_vel(new_pos, possible_moves, goal):

@@ -68,6 +68,7 @@ Notes:
         - To prevent Ant moving away from goal, the nearest move to goal is chosen if there is a tie in distance to desired position
 
 TODO 
+bug exists where ant can climb insect during swarm (seen it climb beetle) (maybe other insects can do the same)
 determine communication to decide what moves first
 
        

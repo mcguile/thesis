@@ -153,6 +153,7 @@ class UI:
         for row in range(self.game.state.board.height):
             for col, hexa in enumerate(self.game.state.board.board[row]):
                 if type(hexa) is not Blank and hexa.rect.collidepoint(event.pos) and hexa.player == self.game.state.players_turn:
+                    print(type(hexa))
                     self.game.state.hexa_selected = hexa
                     self.game.state.hexa_selected_is_on_board = True
                     self.mouse_pos.x, self.mouse_pos.y = np.subtract(event.pos, (self.hexa_width // 2,
@@ -205,6 +206,7 @@ class UI:
     def playbyplay(self):
         move_from = None
         printed_game_result = False
+        space = Space(self.game.state)
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -219,7 +221,6 @@ class UI:
                         #     self.game.state = self.game.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            space = Space(self.game.state)
                             space.set_pbest()
                             space.set_gbest()
                             for particle, from_pos, new_vel in space.move_particles():
@@ -232,9 +233,9 @@ class UI:
                                     possible_moves = get_possible_moves_from_board(self.game.state)
                                     if possible_moves:
                                         r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
-                                        print(f'nearest move from {f_r, f_c} to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
                                         make_move(self.game.state, r, c, self.game.state.board)
-                                        particle.move()
+                                        particle.pos = np.array([r, c])
+                                        print(f'nearest from {f_r, f_c} to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
                                         self.draw_game()
                                         pygame.display.update()
                                         self.clock.tick(30)
