@@ -283,7 +283,7 @@ class UI:
                                     self.game.state.first_move_white = move_white_first(self.game.state, self.game.state.first_move_white, event)
                                 else:
                                     self.select_from_rack_tiles((mouse_x, mouse_y))
-                            else:
+                            elif is_bee_placed(self.game.state, self.game.state.players_turn):
                                 move_from = self.game.state.board
                                 self.select_from_board(event)
 
@@ -310,7 +310,7 @@ pygame.init()
 g = Game(time_limit=None, iter_limit=100)
 ui = UI(g)
 # use_testboard()
-generate_random_full_board(g.state)
+# generate_random_full_board(g.state)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
