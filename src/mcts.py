@@ -17,7 +17,7 @@ class Node:
 
 
 class MCTS:
-    def __init__(self, time_limit=None, iter_limit=None, exploration_const=1/math.sqrt(2)):
+    def __init__(self, time_limit=None, iter_limit=None, exploration_const=math.sqrt(2)):
         self.time_limit = time_limit
         self.iter_limit = iter_limit
         self.exploration_const = exploration_const
@@ -80,7 +80,7 @@ class MCTS:
         best_nodes = []
         for child in node.children.values():
             node_val = node.state.players_turn * child.total_reward / child.num_visits + \
-                       self.exploration_const * math.sqrt(2*math.log(node.num_visits) / child.num_visits)
+                       self.exploration_const * math.sqrt(math.log(node.num_visits) / child.num_visits)
             if node_val > best_val:
                 best_val = node_val
                 best_nodes = [child]
