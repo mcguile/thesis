@@ -1,6 +1,5 @@
 from insects import *
 from count_hives import HiveGraph
-from state import State
 from utils import *
 import time
 import random
@@ -9,13 +8,6 @@ import numpy as np
 
 W = -1
 B = 1
-
-
-class Game:
-    def __init__(self, time_limit, iter_limit):
-        self.time_limit = time_limit
-        self.iter_limit = iter_limit
-        self.state = State()
 
 
 def opp(player):
@@ -35,8 +27,7 @@ def get_hexa_neighbours(r, c, state):
             elif (c % 2 == 1) and ((col == c - 1 and row == r - 1) or (row == r - 1 and col == c + 1)):
                 continue
             else:
-                if type(state.board.board[row][col]) is not Blank and state.hexa_selected != state.board.board[row][
-                    col]:
+                if type(state.board.board[row][col]) is not Blank and state.hexa_selected != state.board.board[row][col]:
                     non_blank_neighbours += 1
                 neighbours.add((row, col))
     return neighbours, non_blank_neighbours > 4
@@ -154,14 +145,12 @@ def get_possible_moves_spider(state):
         state.hexa_selected.r, state.hexa_selected.c = r1, c1
         state.board.board[r][c] = Blank()
         for (r2, c2) in get_possible_moves_bee(state):
-            if (r2, c2) == (r, c):
-                continue
-            state.hexa_selected.r, state.hexa_selected.c = r2, c2
-            state.board.board[r1][c1] = Blank()
-            for (r3, c3) in get_possible_moves_bee(state):
-                if (r3, c3) == (r, c) or (r3, c3) == (r1, c1):
-                    continue
-                possible_moves.add((r3, c3))
+            if (r2, c2) != (r, c):
+                state.hexa_selected.r, state.hexa_selected.c = r2, c2
+                state.board.board[r1][c1] = Blank()
+                for (r3, c3) in get_possible_moves_bee(state):
+                    if (r3, c3) != (r, c) and (r3, c3) != (r1, c1):
+                        possible_moves.add((r3, c3))
     state.hexa_selected.r, state.hexa_selected.c = r, c
     state.board.board[r][c] = o
     # print(time.time()-t)
@@ -202,9 +191,9 @@ def get_possible_moves_beetle(state):
     rf, cf = state.hexa_selected.r, state.hexa_selected.c
     if move_away_wont_break_hive(state):
         for (r, c) in neighbours_of_selected:
-            if type(state.board.board[r][c]) is Blank and breaks_freedom_to_move(r, c, rf, cf, state):
-                continue
             if type(state.board.board[r][c]) is Blank:
+                if breaks_freedom_to_move(r, c, state.hexa_selected.r, state.hexa_selected.c, state):
+                    continue
                 neighbours_of_neighbour, _ = get_hexa_neighbours(r, c, state)
                 for (r_, c_) in neighbours_of_neighbour:
                     if type(state.board.board[r_][c_]) is not Blank and \
@@ -380,27 +369,14 @@ def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
 
 
-# def get_reward(state):
-#     count_n_w = 0
-#     count_n_b = 0
-#     for n in get_cell_neighbours(*state.bee_pos_white, state.board.height, state.board.width):
-#         hexa = state.board.board[n[0]][n[1]]
-#         if type(hexa) is not Blank:
-#             count_n_w += 1
-#     for n in get_cell_neighbours(*state.bee_pos_black, state.board.height, state.board.width):
-#         hexa = state.board.board[n[0]][n[1]]
-#         if type(hexa) is not Blank:
-#             count_n_b += 1
-#     return (1/6) * count_n_w - (1/6) * count_n_b
-
-
-def get_reward(state):
+def get_reward(state, player):
     count = 0
-    for n in get_cell_neighbours(*state.bee_pos_black, state.board.height, state.board.width):
+    bee_pos = state.bee_pos_black if player == -1 else state.bee_pos_white
+    for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
         hexa = state.board.board[n[0]][n[1]]
         if type(hexa) is not Blank:
             count += 1
-    return (-1 / 6) * count  # Negative for white to win
+    return (1 / 6) * count * player  # Negative for white to win
 
 
 def has_won(state, player):
