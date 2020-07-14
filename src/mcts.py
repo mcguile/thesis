@@ -36,7 +36,7 @@ class MCTS:
         if self.time_limit:
             time_limit = time.time() + self.time_limit/1000
             while time.time() < time_limit:
-                self.execute_round()
+                self.execute_round(root)
         else:
             for _ in range(self.iter_limit):
                 self.execute_round(root)
@@ -79,7 +79,7 @@ class MCTS:
         best_val = float('-inf')
         best_nodes = []
         for child in node.children.values():
-            node_val = node.state.get_current_player() * child.total_reward / child.num_visits + \
+            node_val = node.state.players_turn * child.total_reward / child.num_visits + \
                        self.exploration_const * math.sqrt(2*math.log(node.num_visits) / child.num_visits)
             if node_val > best_val:
                 best_val = node_val
@@ -98,18 +98,18 @@ class MCTS:
         while not state.is_terminal():
             try:
                 action = np.random.choice(state.get_possible_actions())
-            except IndexError:
-                print('ah feck')
+            except ValueError:
                 time.sleep(1000000)
                 raise Exception('No possible actions for non-terminal state ' + str(state))
             state = state.take_action(action)
         reward = state.get_reward()
+        print(starting_action, reward)
         return reward
 
     def multiprocess_search(self, state):
         num_processes = multiprocessing.cpu_count()-1 or 1
         p_t, p_p = (state.turn_count_white, "White") if state.players_turn == -1 else (state.turn_count_black, "Black")
-        print(f'MCTS - Executing {num_processes} parallel processes for {p_p} turn {p_t}')
+        print(f'MCTS - Executing {num_processes} parallel processes for {p_p} turn {p_t+1}')
         results = ray.get([self.search.remote(self, state) for _ in range(num_processes)])
         root = results[0]
         for node in results[1:]:

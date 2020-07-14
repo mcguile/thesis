@@ -234,17 +234,21 @@ def get_possible_moves_grasshopper(state):
 
 
 def get_possible_moves_from_board(state):
-    t = type(state.hexa_selected)
-    if t == Bee:
-        return get_possible_moves_bee(state)
-    elif t == Spider:
-        return get_possible_moves_spider(state)
-    elif t == Ant:
-        return get_possible_moves_ant(state)
-    elif t == Beetle or t == Stack:
-        return get_possible_moves_beetle(state)
+    if (state.players_turn == W and not state.bee_placed_white) or \
+            (state.players_turn == B and not state.bee_placed_black):
+        return set()
     else:
-        return get_possible_moves_grasshopper(state)
+        t = type(state.hexa_selected)
+        if t == Bee:
+            return get_possible_moves_bee(state)
+        elif t == Spider:
+            return get_possible_moves_spider(state)
+        elif t == Ant:
+            return get_possible_moves_ant(state)
+        elif t == Beetle or t == Stack:
+            return get_possible_moves_beetle(state)
+        else:
+            return get_possible_moves_grasshopper(state)
 
 
 def make_move(state, to_row, to_col, fromm_board):
@@ -315,7 +319,7 @@ def make_move(state, to_row, to_col, fromm_board):
     state.possible_moves = set()
 
 
-def player_able_to_move(state):
+def can_move_from_board(state):
     for row in range(state.board.height):
         for col, hexa in enumerate(state.board.board[row]):
             if hexa.player == state.players_turn:
@@ -325,13 +329,32 @@ def player_able_to_move(state):
     return False
 
 
+def can_move_from_rack(state):
+    start, stop = get_rack_inidices(state.players_turn)
+    for row in range(start, stop):
+        for col, hexa in enumerate(state.start_tiles.board[row]):
+            if hexa.player == state.players_turn:
+                state.hexa_selected = hexa
+            for r, _ in enumerate(state.board.board):
+                for c, hexa in enumerate(state.board.board[r]):
+                    neighbours = get_cell_neighbours(r, c, state.board.height, state.board.width)
+                    valid_placement = True
+                    found_own_tile = False
+                    for x, y in neighbours:
+                        if state.board.board[x][y].player == state.players_turn:
+                            found_own_tile = True
+                        elif state.board.board[x][y].player == opp(state.players_turn) or type(
+                                state.board.board[r][c]) != Blank:
+                            valid_placement = False
+                    if found_own_tile and valid_placement:
+                        return True
+    return False
+
+
 def set_player_turn(state):
-    # if state.players_turn == W and state.start_tiles.board_count_w > 0 or \
-    #         state.players_turn == B and state.start_tiles.board_count_b > 0:
-    #     return
-    if state.board.board_count < 2:
+    if state.board.board_count < 2 or can_move_from_board(state) or can_move_from_rack(state):
         return
-    elif not player_able_to_move(state):
+    else:
         state.players_turn = opp(state.players_turn)
 
 
@@ -370,13 +393,13 @@ def isGameOver(state):
 
 
 def get_reward(state, player):
-    count = 0
-    bee_pos = state.bee_pos_black if player == -1 else state.bee_pos_white
+    count = 6
+    bee_pos = state.bee_pos_white if player == B else state.bee_pos_black
     for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
         hexa = state.board.board[n[0]][n[1]]
-        if type(hexa) is not Blank:
-            count += 1
-    return (1 / 6) * count * player  # Negative for white to win
+        if type(hexa) is Blank:
+            count -= 1
+    return count/6 * player
 
 
 def has_won(state, player):
@@ -399,6 +422,10 @@ def increment_turn_count(state):
 
 
 def get_possible_moves_from_rack(state):
+    if state.players_turn == W and not state.bee_placed_white and state.turn_count_white == 3:
+        state.hexa_selected = state.start_tiles.board[0][3]
+    elif state.players_turn == B and not state.bee_placed_black and state.turn_count_black == 3:
+        state.hexa_selected = state.start_tiles.board[3][3]
     possible_moves = set()
     for r, _ in enumerate(state.board.board):
         for c, hexa in enumerate(state.board.board[r]):
@@ -475,6 +502,14 @@ def make_random_move_from_board(state):
 
 
 def make_random_move_from_rack(state):
+    row, col = state.white_pieces_start[-1] if state.players_turn == W else state.black_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[row][col]
+    move = random.choice(list(get_possible_moves_from_rack(state)))
+    row, col = move[0], move[1]
+    make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+
+
+def make_random_move_from_anywhere(state):
     if state.players_turn == W and not state.bee_placed_white and state.turn_count_white == 3:
         state.hexa_selected = state.start_tiles.board[0][3]
         move = random.choice(list(get_possible_moves_from_rack(state)))
@@ -485,26 +520,23 @@ def make_random_move_from_rack(state):
         move = random.choice(list(get_possible_moves_from_rack(state)))
         row, col = move[0], move[1]
         make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+    elif (state.players_turn == W and not state.bee_placed_white) or (state.players_turn == B and not state.bee_placed_black):
+        make_random_move_from_rack(state)
     else:
-        row, col = state.white_pieces_start[-1] if state.players_turn == W else state.black_pieces_start[-1]
-        state.hexa_selected = state.start_tiles.board[row][col]
-        move = random.choice(list(get_possible_moves_from_rack(state)))
-        row, col = move[0], move[1]
-        make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
-
-
-def make_random_move_from_anywhere(state):
-    i = random.getrandbits(1)
-    if i == 0 and \
-            ((state.players_turn == -1 and len(state.white_pieces_start) > 0) or
-             (state.players_turn == 1 and len(state.black_pieces_start) > 0)):
-        try:
-            make_random_move_from_rack(state)
-        except IndexError:
-            # Occurs if a player cannot legally move from rack but still has rack pieces
-            make_random_move_from_board(state)
-    else:
-        make_random_move_from_board(state)
+        i = random.getrandbits(1)
+        if i == 0 and \
+                ((state.players_turn == W and len(state.white_pieces_start) > 0) or
+                 (state.players_turn == B and len(state.black_pieces_start) > 0)):
+            try:
+                make_random_move_from_rack(state)
+            except IndexError:
+                # Occurs if a player cannot legally move from rack but still has rack pieces
+                make_random_move_from_board(state)
+        else:
+            try:
+                make_random_move_from_board(state)
+            except IndexError:
+                make_random_move_from_rack(state)
 
 
 def make_first_move_each(state):

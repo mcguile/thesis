@@ -1,5 +1,6 @@
 from game import *
 from mcts import MCTS
+from state import State
 import ray
 
 ray.init()
@@ -11,8 +12,7 @@ player_swarm = 'SWARM'
 
 def play_full_game(game, player1, player2):
     make_first_move_each(game.state)
-    if player1 == player_mcts or player2 == player_mcts:
-        mcts_ = MCTS(time_limit=game.time_limit, iter_limit=game.iter_limit)
+    mcts_ = MCTS(time_limit=game.time_limit, iter_limit=game.iter_limit)
     while not isGameOver(game.state):
         if game.state.players_turn == -1:
             if player1 == player_random:
@@ -36,5 +36,5 @@ def play_full_game(game, player1, player2):
         print(f"Black wins after {game.state.turn_count_black} turns")
 
 
-g = Game(time_limit=None, iter_limit=100)
+g = State(time_limit=None, iter_limit=100)
 play_full_game(g, player1=player_random, player2=player_random)
