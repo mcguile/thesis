@@ -103,7 +103,6 @@ class MCTS:
                 raise Exception('No possible actions for non-terminal state ' + str(state))
             state = state.take_action(action)
         reward = state.get_reward()
-        print(starting_action, reward)
         return reward
 
     def multiprocess_search(self, state):

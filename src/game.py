@@ -392,14 +392,23 @@ def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
 
 
-def get_reward(state, player):
-    count = 6
-    bee_pos = state.bee_pos_white if player == B else state.bee_pos_black
-    for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
+def get_reward(state):
+    count_around_white = 6
+    count_around_black = 6
+    for n in get_cell_neighbours(*state.bee_pos_white, state.board.height, state.board.width):
         hexa = state.board.board[n[0]][n[1]]
         if type(hexa) is Blank:
-            count -= 1
-    return count/6 * player
+            count_around_white -= 1
+    for n in get_cell_neighbours(*state.bee_pos_black, state.board.height, state.board.width):
+        hexa = state.board.board[n[0]][n[1]]
+        if type(hexa) is Blank:
+            count_around_black -= 1
+    if count_around_white == 6:
+        return 1
+    elif count_around_black == 6:
+        return -1
+    else:
+        return 0
 
 
 def has_won(state, player):

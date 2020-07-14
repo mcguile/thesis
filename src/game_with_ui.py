@@ -312,10 +312,10 @@ class UI:
 
 
 pygame.init()
-g = State(time_limit=None, iter_limit=10)
+g = State(time_limit=None, iter_limit=100)
 ui = UI(g)
-use_testboard()
-# generate_random_full_board(g)
+# use_testboard()
+generate_random_full_board(g)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN

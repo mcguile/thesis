@@ -98,4 +98,4 @@ class State:
         return isGameOver(self) or self.depth_limit_reached()
 
     def get_reward(self):
-        return get_reward(self, self.players_turn)
+        return get_reward(self)
