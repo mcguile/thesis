@@ -1,7 +1,7 @@
 Known Bugs:
 - Selection from rack not highlighted - functionality not affected
-- Beetle is occasionally broken - reason unknown, need investigation
-- Insect (Ant noted) can occasionally slide into space that breaks Freedom-to-move rule
+- ~~Beetle is occasionally broken - reason unknown, need investigation~~
+- ~~Insect (Ant noted) can occasionally slide into space that breaks Freedom-to-move rule~~
 
 #### 16/06/2020 - 23/06/2020
 Known bugs:
