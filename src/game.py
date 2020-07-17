@@ -585,7 +585,7 @@ def make_mcts_move(state, action):
         make_move(state, action.r_t, action.c_t, state.board)
 
 
-def convert_vel(vel, insect_type):
+def convert_vel(vel):
     new_vel = []
     v_threshold = 0.25
     for value in vel:
@@ -594,12 +594,6 @@ def convert_vel(vel, insect_type):
             v += 1
         elif value - v < -v_threshold:
             v -= 1
-        # if insect_type is Bee or insect_type is Beetle:
-        #     if v < 0:
-        #         new_vel.append(-1)
-        #     else:
-        #         new_vel.append(1)
-        # else:
         new_vel.append(v)
     return np.array(new_vel)
 
@@ -634,7 +628,7 @@ def make_swarm_move(state, space):
     space.set_gbest()
     for particle, from_pos, new_vel in space.get_velocities():
         f_r, f_c = from_pos
-        new_vel = convert_vel(new_vel, type(state.board.board[f_r][f_c]))
+        new_vel = convert_vel(new_vel)
         particle.vel = new_vel
         particle.intention = 0
         playable_positions = state.white_positions if state.players_turn == W else state.black_positions
@@ -646,20 +640,19 @@ def make_swarm_move(state, space):
                 r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
                 particle.desired_pos_nearest = (r, c)
                 set_intention(state, particle, set_of_new_pos, (r, c))
-                make_move(state, r, c, state.board)
-                state.players_turn = -1  # TODO remove in real game
-                particle.pos = np.array([r, c])
-                if isGameOver(state):
-                    return
-                # print(f'nearest from {f_r, f_c} to {f_r + new_vel[0], f_c + new_vel[1]} is {r, c}')
-    # best_in_vicins = space.get_best_in_vicinities()
-    # best_particle = space.get_best_particle_equal_score(best_in_vicins)
-    # r, c = best_particle.desired_pos_nearest
-    # f_r, f_c = best_particle.pos
-    # state.hexa_selected = state.board.board[f_r][f_c]
-    # make_move(state, r, c, state.board)
-    # best_particle.pos = np.array([r, c])
-    # state.players_turn = -1
+                # make_move(state, r, c, state.board)
+                # state.players_turn = -1  # TODO remove in real game
+                # particle.pos = np.array([r, c])
+                # if isGameOver(state):
+                #     return
+    best_in_vicins = space.get_best_in_vicinities()
+    best_particle = space.get_best_particle_equal_score(best_in_vicins)
+    r, c = best_particle.desired_pos_nearest
+    f_r, f_c = best_particle.pos
+    state.hexa_selected = state.board.board[f_r][f_c]
+    make_move(state, r, c, state.board)
+    best_particle.pos = np.array([r, c])
+    state.players_turn = -1
 
 
 def set_intention(state, particle, set_of_new_pos, selected_pos):
@@ -671,7 +664,8 @@ def set_intention(state, particle, set_of_new_pos, selected_pos):
             desired_pos = desired_pos[1]
     else:
         desired_pos = desired_pos[0]
-    accuracy_intent = max(0, distance_between_(desired_pos, selected_pos))
+    # accuracy_intent = max(0, 10-distance_between_(desired_pos, selected_pos))
+    accuracy_intent = distance_between_(desired_pos, particle.pos)
     danger_intent = 0
     bee_pos = state.bee_pos_white if state.players_turn == W else state.bee_pos_black
     if distance_between_(particle.pos, bee_pos) == 1:
@@ -680,4 +674,4 @@ def set_intention(state, particle, set_of_new_pos, selected_pos):
             danger_intent = 2
         elif c == 5:
             danger_intent = 10
-    particle.intention = max(0, 10-accuracy_intent) + danger_intent
+    particle.intention = accuracy_intent + danger_intent

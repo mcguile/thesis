@@ -297,7 +297,7 @@ pygame.init()
 g = State(time_limit=None, iter_limit=100)
 game = GameUI(g)
 # use_testboard()
-generate_random_full_board(g)
+generate_random_full_board(g, seed=12)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
