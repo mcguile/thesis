@@ -7,7 +7,7 @@ from game import *
 from state import State
 from mcts import MCTS
 import numpy as np
-from src_swarm.swarm import Space
+from swarm import Space
 import ray
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -40,12 +40,12 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
     elif insect_id == 4:
         img = pygame.image.load(f'../img_assets/{p}_spider.png')
     else:
-        img = pygame.image.load(f'../../img_assets/blank.png')
+        img = pygame.image.load(f'../img_assets/blank.png')
 
     if blit_selected:
-        img.blit(pygame.image.load('../../img_assets/selected.png'), (0, 0))
+        img.blit(pygame.image.load('../img_assets/selected.png'), (0, 0))
     elif blit_possible:
-        img.blit(pygame.image.load('../../img_assets/possible.png'), (0, 0))
+        img.blit(pygame.image.load('../img_assets/possible.png'), (0, 0))
     return img
 
 
@@ -83,8 +83,8 @@ class GameUI:
         self.rack_pixel_height = 160
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.pixel_width, self.pixel_height), 0, 32)
-        self.bg = pygame.image.load('../../img_assets/wood.jpg')
-        self.img_selected = pygame.image.load('../../img_assets/selected.png')
+        self.bg = pygame.image.load('../img_assets/wood.jpg')
+        self.img_selected = pygame.image.load('../img_assets/selected.png')
         self.rack_top_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
                                             32)
         self.rack_bottom_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
@@ -92,7 +92,7 @@ class GameUI:
         self.drag_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA, 32)
         self.drag_surf_rect = self.drag_surf.get_rect()
         # self.drag_surf_rect.x += 23  # Center first piece on screen (Commented for now as it affects click pos)
-        self.hexa_size = pygame.image.load('../../img_assets/blank.png').get_rect().size
+        self.hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         self.font = pygame.font.Font('freesansbold.ttf', 20)
@@ -216,7 +216,7 @@ class GameUI:
     def playbyplay(self):
         move_from = None
         printed_game_result = False
-        space = Space(self.state)
+        space = Space(self.state, vicinities=True, vicin_radius=2)
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
         while True:
             for event in pygame.event.get():
@@ -297,7 +297,7 @@ pygame.init()
 g = State(time_limit=None, iter_limit=100)
 game = GameUI(g)
 # use_testboard()
-generate_random_full_board(g, seed=12)
+generate_random_full_board(g)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN

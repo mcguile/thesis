@@ -5,6 +5,7 @@ import time
 import random
 import math
 import numpy as np
+from copy import deepcopy
 
 W = -1
 B = 1
@@ -392,6 +393,16 @@ def isGameOver(state):
     return has_won(state, W) or has_won(state, B)
 
 
+def count_around_own_queen(state):
+    count = 6
+    bee_pos = state.bee_pos_white if state.players_turn == W else state.bee_pos_black
+    for n in get_cell_neighbours(*bee_pos, state.board.height, state.board.width):
+        hexa = state.board.board[n[0]][n[1]]
+        if type(hexa) is Blank:
+            count -= 1
+    return count
+
+
 def get_reward(state):
     count_around_white = 6
     count_around_black = 6
@@ -583,18 +594,19 @@ def convert_vel(vel, insect_type):
             v += 1
         elif value - v < -v_threshold:
             v -= 1
-        if insect_type is Bee or insect_type is Beetle:
-            if v < 0:
-                new_vel.append(-1)
-            else:
-                new_vel.append(1)
-        else:
-            new_vel.append(v)
+        # if insect_type is Bee or insect_type is Beetle:
+        #     if v < 0:
+        #         new_vel.append(-1)
+        #     else:
+        #         new_vel.append(1)
+        # else:
+        new_vel.append(v)
     return np.array(new_vel)
 
 
-def nearest_move_after_vel(new_pos, possible_moves, goal):
+def nearest_move_after_vel(desired_pos, possible_moves, goal):
     # maximum TWO positions in new_pos due to East-West/ West-East moves
+    new_pos = list(desired_pos)
     pos1 = new_pos.pop()
     pos2 = None if not new_pos else new_pos.pop()
     closest_dist_seen = float('inf')
@@ -624,15 +636,48 @@ def make_swarm_move(state, space):
         f_r, f_c = from_pos
         new_vel = convert_vel(new_vel, type(state.board.board[f_r][f_c]))
         particle.vel = new_vel
-        if new_vel[0] != 0 or new_vel[1] != 0:
+        particle.intention = 0
+        playable_positions = state.white_positions if state.players_turn == W else state.black_positions
+        if (new_vel[0] != 0 or new_vel[1] != 0) and (f_r, f_c) in playable_positions:
             state.hexa_selected = state.board.board[f_r][f_c]
             set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
             possible_moves = get_possible_moves_from_board(state)
             if possible_moves:
                 r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
+                particle.desired_pos_nearest = (r, c)
+                set_intention(state, particle, set_of_new_pos, (r, c))
                 make_move(state, r, c, state.board)
                 state.players_turn = -1  # TODO remove in real game
                 particle.pos = np.array([r, c])
                 if isGameOver(state):
                     return
                 # print(f'nearest from {f_r, f_c} to {f_r + new_vel[0], f_c + new_vel[1]} is {r, c}')
+    # best_in_vicins = space.get_best_in_vicinities()
+    # best_particle = space.get_best_particle_equal_score(best_in_vicins)
+    # r, c = best_particle.desired_pos_nearest
+    # f_r, f_c = best_particle.pos
+    # state.hexa_selected = state.board.board[f_r][f_c]
+    # make_move(state, r, c, state.board)
+    # best_particle.pos = np.array([r, c])
+    # state.players_turn = -1
+
+
+def set_intention(state, particle, set_of_new_pos, selected_pos):
+    desired_pos = list(set_of_new_pos)
+    if len(desired_pos) > 1:
+        if distance_between_(desired_pos[0], selected_pos) <= distance_between_(desired_pos[1], selected_pos):
+            desired_pos = desired_pos[0]
+        else:
+            desired_pos = desired_pos[1]
+    else:
+        desired_pos = desired_pos[0]
+    accuracy_intent = max(0, distance_between_(desired_pos, selected_pos))
+    danger_intent = 0
+    bee_pos = state.bee_pos_white if state.players_turn == W else state.bee_pos_black
+    if distance_between_(particle.pos, bee_pos) == 1:
+        c = count_around_own_queen(state)
+        if c == 4:
+            danger_intent = 2
+        elif c == 5:
+            danger_intent = 10
+    particle.intention = max(0, 10-accuracy_intent) + danger_intent

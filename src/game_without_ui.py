@@ -1,7 +1,6 @@
 from game import *
 from mcts import MCTS
-from src_swarm.swarm import Space
-from state import State
+from swarm import Space
 import ray
 
 ray.init()

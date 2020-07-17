@@ -123,37 +123,10 @@ def transform_cell_pos_from_velocity(vel, pos):
     d = direction(vel)
     if not d:
         return {(r_pos, c_pos)}
-    elif d == 'S':
-        return {(r_pos+1, c_pos)}
-    elif d == 'N':
-        return {(r_pos-1, c_pos)}
-    elif d == 'W':
+    elif d != 'E' and d != 'W' or vel[1] % 2 == 0:
+        return {(r_pos+vel[0], c_pos+vel[1])}
+    elif vel[1] % 2 == 1:
         if c_pos % 2 == 0:
-            return {(r_pos-1, c_pos-1), (r_pos, c_pos-1)}
+            return {(r_pos-1, c_pos+vel[1]), (r_pos-1, c_pos+vel[1])}
         else:
-            return {(r_pos, c_pos-1), (r_pos+1, c_pos-1)}
-    elif d == 'E':
-        if c_pos % 2 == 0:
-            return {(r_pos-1, c_pos+1), (r_pos, c_pos+1)}
-        else:
-            return {(r_pos, c_pos+1), (r_pos+1, c_pos+1)}
-    elif d == 'NW':
-        if c_pos % 2 == 0:
-            return {(r_pos-1, c_pos-1)}
-        else:
-            return {(r_pos, c_pos-1)}
-    elif d == 'NE':
-        if c_pos % 2 == 0:
-            return {(r_pos-1, c_pos+1)}
-        else:
-            return {(r_pos, c_pos+1)}
-    elif d == 'SW':
-        if c_pos % 2 == 0:
-            return {(r_pos, c_pos-1)}
-        else:
-            return {(r_pos+1, c_pos-1)}
-    elif d == 'SE':
-        if c_pos % 2 == 0:
-            return {(r_pos, c_pos+1)}
-        else:
-            return {(r_pos+1, c_pos+1)}
+            return {(r_pos, c_pos+vel[1]), (r_pos+1, c_pos+vel[1])}
