@@ -70,8 +70,9 @@ Notes:
 - Due to the implementation of swarming for PSO, a particle does not stop when the goal is reached. It continues with some velocity and slows down spiralling into the minima (if it could move freely).
     - A modification could be to stop once at goal but this begins to move away from swarm behaviour and more into "just head to goal if you know where it is" behaviour
     
-TODO 
-bug exists where ant can climb insect during swarm (seen it climb beetle) (maybe other insects can do the same)
-determine communication to decide what moves first
-
+#### 16/07/2020
+- Trials with all insects conducted and work well
+- Noted that as the movement process is iterative, a Beetle may move twice if it moves on top of an insect which has not yet moved; irrelevant for the real turn-by-turn game
+- Refactored the non-ui class so it can be used in the test class
+- Implemented Local Vicinity PSO with varying vicinity radii and conducted comparison against Global PSO. Local Vicinity will be used herein to allow for intra- and inter-vicinity communication.
        

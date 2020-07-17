@@ -40,12 +40,12 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
     elif insect_id == 4:
         img = pygame.image.load(f'../img_assets/{p}_spider.png')
     else:
-        img = pygame.image.load(f'../img_assets/blank.png')
+        img = pygame.image.load(f'../../img_assets/blank.png')
 
     if blit_selected:
-        img.blit(pygame.image.load('../img_assets/selected.png'), (0, 0))
+        img.blit(pygame.image.load('../../img_assets/selected.png'), (0, 0))
     elif blit_possible:
-        img.blit(pygame.image.load('../img_assets/possible.png'), (0, 0))
+        img.blit(pygame.image.load('../../img_assets/possible.png'), (0, 0))
     return img
 
 
@@ -75,7 +75,7 @@ def use_testboard():
     g.players_turn = 1
 
 
-class UI:
+class GameUI:
     def __init__(self, state):
         """User Interface ATTR START"""
         self.pixel_width = 1000
@@ -83,8 +83,8 @@ class UI:
         self.rack_pixel_height = 160
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.pixel_width, self.pixel_height), 0, 32)
-        self.bg = pygame.image.load('../img_assets/wood.jpg')
-        self.img_selected = pygame.image.load('../img_assets/selected.png')
+        self.bg = pygame.image.load('../../img_assets/wood.jpg')
+        self.img_selected = pygame.image.load('../../img_assets/selected.png')
         self.rack_top_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
                                             32)
         self.rack_bottom_surf = pygame.Surface((self.pixel_width, self.rack_pixel_height), pygame.SRCALPHA,
@@ -92,7 +92,7 @@ class UI:
         self.drag_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA, 32)
         self.drag_surf_rect = self.drag_surf.get_rect()
         # self.drag_surf_rect.x += 23  # Center first piece on screen (Commented for now as it affects click pos)
-        self.hexa_size = pygame.image.load('../img_assets/blank.png').get_rect().size
+        self.hexa_size = pygame.image.load('../../img_assets/blank.png').get_rect().size
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         self.font = pygame.font.Font('freesansbold.ttf', 20)
@@ -176,6 +176,7 @@ class UI:
         pygame.display.update()
         self.clock.tick(30)
         time.sleep(time_per_move)
+        space = Space(self.state, vicinities=True, vicin_radius=1)
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
         while True:
             for event in pygame.event.get():
@@ -191,7 +192,7 @@ class UI:
                             action = mcts_.multiprocess_search(self.state)
                             make_mcts_move(self.state, action)
                         else:
-                            pass
+                            make_swarm_move(self.state, space)
                     elif self.state.players_turn == 1:
                         if player2 == player_random:
                             make_random_move_from_anywhere(self.state)
@@ -199,7 +200,11 @@ class UI:
                             action = mcts_.multiprocess_search(self.state)
                             make_mcts_move(self.state, action)
                         else:
-                            pass
+                            make_swarm_move(self.state, space)
+                    self.draw_game()
+                    pygame.display.update()
+                    self.clock.tick(30)
+                    time.sleep(time_per_move)
                 else:
                     if not printed_game_result:
                         printed_game_result = True
@@ -207,15 +212,12 @@ class UI:
                             print(f"White wins after {self.state.turn_count_white} turns")
                         else:
                             print(f"Black wins after {self.state.turn_count_black} turns")
-                self.draw_game()
-                pygame.display.update()
-                self.clock.tick(30)
-                time.sleep(time_per_move)
 
     def playbyplay(self):
         move_from = None
         printed_game_result = False
         space = Space(self.state)
+        mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -230,29 +232,9 @@ class UI:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            space.set_pbest()
-                            space.set_gbest()
-                            for particle, from_pos, new_vel in space.move_particles():
-                                f_r, f_c = from_pos
-                                new_vel = convert_vel(new_vel, type(self.state.board.board[f_r][f_c]))
-                                particle.vel = new_vel
-                                if new_vel[0] != 0 or new_vel[1] != 0:
-                                    self.state.hexa_selected = self.state.board.board[f_r][f_c]
-                                    set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
-                                    possible_moves = get_possible_moves_from_board(self.state)
-                                    if possible_moves:
-                                        r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
-                                        make_move(self.state, r, c, self.state.board)
-                                        particle.pos = np.array([r, c])
-                                        print(f'nearest from {f_r, f_c} to {f_r+new_vel[0], f_c+new_vel[1]} is {r,c}')
-                                        self.draw_game()
-                                        pygame.display.update()
-                                        self.clock.tick(30)
-                                        time.sleep(1)
-                                self.state.players_turn = -1
+                            make_swarm_move(self.state, space)
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
-                            mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
                             action = mcts_.multiprocess_search(self.state)
                             if action.r_f < 0:
                                 action.r_f = abs(action.r_f)-1
@@ -313,12 +295,12 @@ class UI:
 
 pygame.init()
 g = State(time_limit=None, iter_limit=100)
-ui = UI(g)
+game = GameUI(g)
 # use_testboard()
-generate_random_full_board(g)
+generate_random_full_board(g, seed=12)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
 
-ui.playbyplay()
+game.playbyplay()
 # ui.play_full_game(player_mcts, player_random)

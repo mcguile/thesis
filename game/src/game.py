@@ -473,7 +473,7 @@ def get_rack_inidices(player):
 
 
 def generate_random_full_board(state, seed=None):
-    print('Generating random board state...')
+    # print('Generating random board state...')
     if seed:
         random.seed(seed)
     random.shuffle(state.white_pieces_start)
@@ -488,7 +488,7 @@ def generate_random_full_board(state, seed=None):
     state.first_move_black = False
     while state.board.board_count < 22:
         make_random_move_from_rack(state)
-    print('Random board state generated.')
+    # print('Random board state generated.')
 
 
 def make_random_move_from_board(state):
@@ -540,12 +540,15 @@ def make_random_move_from_anywhere(state):
                 make_random_move_from_rack(state)
             except IndexError:
                 # Occurs if a player cannot legally move from rack but still has rack pieces
-                make_random_move_from_board(state)
+                try:
+                    make_random_move_from_board(state)
+                except IndexError:
+                    state.players_turn = opp(state.players_turn)
         else:
             try:
                 make_random_move_from_board(state)
             except IndexError:
-                make_random_move_from_rack(state)
+                state.players_turn = opp(state.players_turn)
 
 
 def make_first_move_each(state):
@@ -612,3 +615,24 @@ def nearest_move_after_vel(new_pos, possible_moves, goal):
                 final_pos = move if distance_between_(move, goal) < distance_between_(final_pos, goal) else final_pos
 
     return final_pos
+
+
+def make_swarm_move(state, space):
+    space.set_pbest()
+    space.set_gbest()
+    for particle, from_pos, new_vel in space.get_velocities():
+        f_r, f_c = from_pos
+        new_vel = convert_vel(new_vel, type(state.board.board[f_r][f_c]))
+        particle.vel = new_vel
+        if new_vel[0] != 0 or new_vel[1] != 0:
+            state.hexa_selected = state.board.board[f_r][f_c]
+            set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
+            possible_moves = get_possible_moves_from_board(state)
+            if possible_moves:
+                r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
+                make_move(state, r, c, state.board)
+                state.players_turn = -1  # TODO remove in real game
+                particle.pos = np.array([r, c])
+                if isGameOver(state):
+                    return
+                # print(f'nearest from {f_r, f_c} to {f_r + new_vel[0], f_c + new_vel[1]} is {r, c}')
