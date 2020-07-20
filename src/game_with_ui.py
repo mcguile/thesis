@@ -171,7 +171,13 @@ class GameUI:
 
     def play_full_game(self, player1, player2, time_per_move=0.5):
         printed_game_result = False
-        make_first_move_each(self.state)
+        # make_first_move_each(self.state)
+        while self.state.turn_count_white < 31:
+            try:
+                make_random_move_from_board(self.state)
+            except IndexError:
+                self.state.players_turn = opp(self.state.players_turn)
+        self.state.players_turn = -1
         self.draw_game()
         pygame.display.update()
         self.clock.tick(30)
@@ -216,8 +222,14 @@ class GameUI:
     def playbyplay(self):
         move_from = None
         printed_game_result = False
-        space = Space(self.state, vicinities=True, vicin_radius=2)
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
+        while self.state.turn_count_white < 31:
+            try:
+                make_random_move_from_board(self.state)
+            except IndexError:
+                self.state.players_turn = opp(self.state.players_turn)
+        self.state.players_turn = -1
+        space = Space(self.state, vicinities=True, vicin_radius=2)
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -232,7 +244,7 @@ class GameUI:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            make_swarm_move(self.state, space)
+                            make_swarm_move(self.state, space, intention_criteria=0)
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
                             action = mcts_.multiprocess_search(self.state)
@@ -294,13 +306,15 @@ class GameUI:
 
 
 pygame.init()
+# np.random.seed(38)
+# random.seed(38)
 g = State(time_limit=None, iter_limit=100)
 game = GameUI(g)
 # use_testboard()
-generate_random_full_board(g, seed=12)
+generate_random_full_board(g)
 
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
 
-game.playbyplay()
-# ui.play_full_game(player_mcts, player_random)
+# game.playbyplay()
+game.play_full_game(player_swarm, player_random)
