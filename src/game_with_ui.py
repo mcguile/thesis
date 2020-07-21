@@ -244,7 +244,8 @@ class GameUI:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            make_swarm_move(self.state, space, intention_criteria=0)
+                            # make_swarm_move(self.state, space, intention_criteria=3)
+                            move_nearest_to_goal(self.state)
                         elif event.key == K_LEFT:
                             print('MCTS is searching for the best action...')
                             action = mcts_.multiprocess_search(self.state)
@@ -316,5 +317,5 @@ generate_random_full_board(g)
 
 ## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
 
-# game.playbyplay()
-game.play_full_game(player_swarm, player_random)
+game.playbyplay()
+# game.play_full_game(player_swarm, player_random)

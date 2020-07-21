@@ -28,6 +28,8 @@ class Particle:
         self.best_vicin_val = float('inf')
         self.best_vicin_pos = np.array([0, 0])
         self.intention = 0
+        self.v_intent = 0
+        self.a_intent = 0
         self.desired_pos_nearest = None
 
     def __str__(self):
@@ -90,8 +92,8 @@ class Space:
     def get_best_in_vicinities(self):
         best_in_vicins = set()
         for particle in self.particles:
-            best_intent_val = 0
-            best_intent_particle = None
+            best_intent_val = float('-inf')
+            best_intent_particle = particle
             for p_in_vicin in particle.vicinity:
                 if (p_in_vicin.intention >= best_intent_val) and \
                         (p_in_vicin.desired_pos_nearest != (p_in_vicin.pos[0], p_in_vicin.pos[1])):
@@ -103,28 +105,28 @@ class Space:
     def get_best_particle_equal_score(self, best_in_vicins):
         best_overall_particle = None
         best_list = []
-        best_overall_value = 0
+        best_overall_value = float('-inf')
         for particle in best_in_vicins:
             if particle.intention > best_overall_value:
                 best_overall_value = particle.intention
                 best_list = [particle]
             elif particle.intention == best_overall_value:
                 best_list.append(particle)
-        if len(best_list) == 1:
-            return best_list[0]
-        else:
-            for particle in best_list:
-                if particle.insect_type is Ant:
-                    particle.intention += 5
-                elif particle.insect_type is Beetle:
-                    particle.intention += 4
-                elif particle.insect_type is Grasshopper:
-                    particle.intention += 3
-                elif particle.insect_type is Spider:
-                    particle.intention += 2
-            best_overall_value = 0
-            for particle in best_list:
-                if particle.intention > best_overall_value:
-                    best_overall_value = particle.intention
-                    best_overall_particle = particle
-            return best_overall_particle
+        # if len(best_list) == 1:
+        return best_list[0]
+        # else:
+        #     for particle in best_list:
+        #         if particle.insect_type is Ant:
+        #             particle.intention += 5
+        #         elif particle.insect_type is Beetle:
+        #             particle.intention += 4
+        #         elif particle.insect_type is Grasshopper:
+        #             particle.intention += 3
+        #         elif particle.insect_type is Spider:
+        #             particle.intention += 2
+        #     best_overall_value = 0
+        #     for particle in best_list:
+        #         if particle.intention > best_overall_value:
+        #             best_overall_value = particle.intention
+        #             best_overall_particle = particle
+        #     return best_overall_particle

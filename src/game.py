@@ -294,7 +294,6 @@ def make_move(state, to_row, to_col, fromm_board):
             state.board.board[to_row][to_col] = Stack(first_piece=state.board.board[to_row][to_col],
                                                       stacked_piece=state.hexa_selected,
                                                       row=to_row, col=to_col)
-
     else:
         if type(fromm_board.board[f_row][f_col]) is not Stack:
             fromm_board.board[f_row][f_col] = Blank()
@@ -577,9 +576,11 @@ def make_mcts_move(state, action):
     if action.r_f < 0:
         action.r_f = abs(action.r_f) - 1
         state.hexa_selected = state.start_tiles.board[action.r_f][action.c_f]
+        # print(state.players_turn, (action.r_f, action.c_f), (action.r_t, action.c_t))
         make_move(state, action.r_t, action.c_t, state.start_tiles)
     else:
         state.hexa_selected = state.board.board[action.r_f][action.c_f]
+        # print(state.players_turn, (action.r_f, action.c_f), (action.r_t, action.c_t))
         make_move(state, action.r_t, action.c_t, state.board)
 
 
@@ -617,51 +618,97 @@ def nearest_move_after_vel(desired_pos, possible_moves, goal):
                 final_pos = move
             elif d2 == closest_dist_seen:
                 final_pos = move if distance_between_(move, goal) < distance_between_(final_pos, goal) else final_pos
-
     return final_pos
 
 
-def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False):
-    space.set_pbest()
-    space.set_gbest()
-    playable_positions = set()
+def move_nearest_to_goal(state):
+    final_move = []
+    possible_moves_dict = dict()
+    shortest_dist = float('inf')
+    goal = state.bee_pos_white if state.players_turn == B else state.bee_pos_black
     for row in range(state.board.height):
         for col, hexa in enumerate(state.board.board[row]):
             if hexa.player == state.players_turn:
-                playable_positions.add((row,col))
-    for particle, from_pos, new_vel in space.get_velocities():
-        f_r, f_c = from_pos
-        new_vel = convert_vel(new_vel)
-        particle.vel = new_vel
-        particle.intention = 0
-        if (new_vel[0] != 0 or new_vel[1] != 0) and (f_r, f_c) in playable_positions:
-            state.hexa_selected = state.board.board[f_r][f_c]
-            set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
-            possible_moves = get_possible_moves_from_board(state)
-            if possible_moves:
-                r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
-                particle.desired_pos_nearest = (r, c)
-                set_intention(state, particle, set_of_new_pos, (r, c), intention_criteria)
-                # Below is only for testing of PSO - not used in actual game play
-                if full_swarm_move:
-                    make_move(state, r, c, state.board)
-                    state.players_turn = -1
-                    particle.pos = np.array([r, c])
-                    if isGameOver(state):
-                        return
-                # End test code
-    if not full_swarm_move:
-        best_in_vicins = space.get_best_in_vicinities()
-        best_particle = space.get_best_particle_equal_score(best_in_vicins)
-        if best_particle.desired_pos_nearest:
-            r, c = best_particle.desired_pos_nearest
-            f_r, f_c = best_particle.pos
-            state.hexa_selected = state.board.board[f_r][f_c]
-            make_move(state, r, c, state.board)
-            best_particle.pos = np.array([r, c])
-            # state.players_turn = -1  # TODO in real game: pass turn to other player
+                state.hexa_selected = hexa
+                possible_moves = get_possible_moves_from_board(state)
+                if possible_moves:
+                    possible_moves_dict[(row, col)] = list(possible_moves)
+                for move in possible_moves:
+                    d = distance_between_(move, goal)
+                    if d <= shortest_dist and distance_between_((row, col), goal) > d:
+                        if d == shortest_dist:
+                            final_move.append([(row, col), move])
+                        else:
+                            final_move = [[(row, col), move]]
+                        shortest_dist = d
+    if final_move:
+        if len(final_move) == 1:
+            from_row, from_col = final_move[0][0][0], final_move[0][0][1]
+            to_row, to_col = final_move[0][1][0], final_move[0][1][1]
         else:
-            state.turn_count_white += 1
+            worst_fitness = 0
+            from_row, from_col = None, None
+            to_row, to_col = None, None
+            for from_pos, to_pos in final_move:
+                if distance_between_(from_pos, goal) > worst_fitness:
+                    worst_fitness = distance_between_(from_pos, goal)
+                    from_row, from_col = from_pos
+                    to_row, to_col = to_pos
+    else:
+        move_from = random.choice(list(possible_moves_dict.keys()))
+        move = random.choice(possible_moves_dict[move_from])
+        to_row, to_col = move[0], move[1]
+        from_row, from_col = move_from
+    state.hexa_selected = state.board.board[from_row][from_col]
+    print('White', (from_row, from_col), (to_row, to_col))
+    make_move(state, to_row, to_col, state.board)
+    # state.players_turn = -1  # TODO REMOVE DURING GAME
+
+
+def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False):
+    if intention_criteria == 4:
+        move_nearest_to_goal(state)
+    else:
+        space.set_pbest()
+        space.set_gbest()
+        playable_positions = set()
+        for row in range(state.board.height):
+            for col, hexa in enumerate(state.board.board[row]):
+                if hexa.player == state.players_turn:
+                    playable_positions.add((row,col))
+        for particle, from_pos, new_vel in space.get_velocities():
+            f_r, f_c = from_pos
+            new_vel = convert_vel(new_vel)
+            particle.vel = new_vel
+            particle.intention = 0
+            if (new_vel[0] != 0 or new_vel[1] != 0) and (f_r, f_c) in playable_positions:
+                state.hexa_selected = state.board.board[f_r][f_c]
+                set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
+                possible_moves = get_possible_moves_from_board(state)
+                if possible_moves:
+                    r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
+                    particle.desired_pos_nearest = (r, c)
+                    set_intention(state, particle, set_of_new_pos, (r, c), intention_criteria)
+                    # Below is only for testing of PSO - not used in actual game play
+                    if full_swarm_move:
+                        make_move(state, r, c, state.board)
+                        state.players_turn = -1
+                        particle.pos = np.array([r, c])
+                        if isGameOver(state):
+                            return
+                    # End test code
+        if not full_swarm_move:
+            best_in_vicins = space.get_best_in_vicinities()
+            best_particle = space.get_best_particle_equal_score(best_in_vicins)
+            if best_particle.desired_pos_nearest:
+                r, c = best_particle.desired_pos_nearest
+                f_r, f_c = best_particle.pos
+                state.hexa_selected = state.board.board[f_r][f_c]
+                make_move(state, r, c, state.board)
+                best_particle.pos = np.array([r, c])
+                # state.players_turn = -1  # TODO in real game: pass turn to other player
+            else:
+                state.turn_count_white += 1
 
 
 def set_intention(state, particle, set_of_new_pos, selected_pos, intention_criteria):
@@ -692,4 +739,11 @@ def set_intention(state, particle, set_of_new_pos, selected_pos, intention_crite
     elif intention_criteria == 1:
         particle.intention = accuracy_intent + danger_intent
     elif intention_criteria == 2:
-        particle.intention = accuracy_intent + velocity_intent + danger_intent
+        particle.intention = particle.pbest_value + danger_intent
+    elif intention_criteria == 3:
+        fitness = particle.pbest_value
+        a = np.random.uniform(0.75, 1, 1)[0] if fitness <= 2 else np.random.uniform(0, 0.25, 1)[0]
+        b = np.random.uniform(0, 0.25, 1)[0] if fitness <= 2 else np.random.uniform(0.75, 1, 1)[0]
+        particle.intention = a * velocity_intent + b * accuracy_intent + danger_intent
+        particle.v_intent = velocity_intent
+        particle.a_intent = accuracy_intent

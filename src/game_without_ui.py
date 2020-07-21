@@ -13,8 +13,8 @@ player_swarm = 'SWARM'
 class GameNoUI:
     def __init__(self, state, player1, player2, vicinities=False, vicin_radius=3,
                  generate_full_board=False,
-                 random_moves_after_generate=10,
-                 intention_criteria=0, full_swarm_move=False):
+                 random_moves_after_generate=0,
+                 intention_criteria=4, full_swarm_move=False):
         self.state = state
         self.mcts = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
         self.vicinities = vicinities
@@ -37,9 +37,10 @@ class GameNoUI:
                         make_random_move_from_board(self.state)
                     except IndexError:
                         self.state.players_turn = opp(self.state.players_turn)
+
+            # self.state.players_turn = -1
         else:
             make_first_move_each(self.state)
-        self.state.players_turn = -1 #  TODO REMOVE IN REAL GAME
         while not isGameOver(self.state) and self.state.turn_count_white < (11 + self.rand_moves + 100):
             if self.state.players_turn == -1:
                 if self.player1 == player_random:
@@ -54,9 +55,10 @@ class GameNoUI:
                     make_random_move_from_anywhere(self.state)
                 elif self.player2 == player_mcts:
                     action = self.mcts.multiprocess_search(self.state)
+                    print("Black", action)
                     make_mcts_move(self.state, action)
                 else:
-                    pass
+                    make_swarm_move(self.state, self.space, self.intention_criteria, self.full_swarm_move)
         hww = has_won(self.state, -1)
         hwb = has_won(self.state, 1)
         if hww:
