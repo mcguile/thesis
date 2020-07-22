@@ -253,12 +253,9 @@ class GameUI:
                                 action.r_f = abs(action.r_f)-1
                                 self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
                                 make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
-                                print("start tiles")
                             else:
                                 self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
                                 make_move(self.state, action.r_t, action.c_t, self.state.board)
-                                print("board")
-                                print(action)
                         elif event.key == K_DOWN:
                             print(make_random_move_from_board(self.state))
                     elif event.type == pygame.MOUSEBUTTONUP:

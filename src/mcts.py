@@ -3,6 +3,8 @@ import math
 import ray
 import numpy as np
 import timeout_decorator
+import multiprocessing
+
 
 class Node:
     def __init__(self, state, parent):
@@ -84,13 +86,14 @@ class MCTS:
         best_val = float('-inf')
         best_nodes = []
         for child in node.children.values():
-            node_val = node.state.players_turn * child.total_reward / child.num_visits + \
-                       self.exploration_const * math.sqrt(math.log(node.num_visits) / child.num_visits)
-            if node_val > best_val:
-                best_val = node_val
-                best_nodes = [child]
-            elif node_val == best_val:
-                best_nodes.append(child)
+            if child.num_visits:
+                node_val = node.state.players_turn * child.total_reward / child.num_visits + \
+                           self.exploration_const * math.sqrt(math.log(node.num_visits) / child.num_visits)
+                if node_val > best_val:
+                    best_val = node_val
+                    best_nodes = [child]
+                elif node_val == best_val:
+                    best_nodes.append(child)
         return np.random.choice(best_nodes)
 
     def get_action(self, root, best_child):
@@ -111,10 +114,10 @@ class MCTS:
         return reward
 
     def multiprocess_search(self, state):
-        # num_processes = multiprocessing.cpu_count()-1 or 1
+        num_processes = multiprocessing.cpu_count()-1 or 1
         # p_t, p_p = (state.turn_count_white, "White") if state.players_turn == -1 else (state.turn_count_black, "Black")
         # print(f'MCTS - Executing {num_processes} parallel processes for {p_p} turn {p_t+1}')
-        results = ray.get([self.search.remote(self, state) for _ in range(9)])
+        results = ray.get([self.search.remote(self, state) for _ in range(num_processes)])
         root = results[0]
         for node in results[1:]:
             for action, child in node.children.items():
