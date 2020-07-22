@@ -76,3 +76,11 @@ Notes:
 - Refactored the non-ui class so it can be used in the test class
 - Implemented Local Vicinity PSO with varying vicinity radii and conducted comparison against Global PSO. Local Vicinity will be used herein to allow for intra- and inter-vicinity communication.
        
+#### 17/07/2020 - 22/07/2020
+- Beginning testing using turn-by-turn PSO - move selection is the primary focus
+- INTENTION factors are researched to determine move to be selected
+    - Factors include velocity, accuracy, fitness, danger theory, and movement ability
+    - Winner of each vicinity by intention score face off against each other if score is equal highest. Tiebreaker is one of the above factors not used for initial intention calc.
+- Non-PSO approach considered using "direct to goal" method
+    - Danger theory can, and most likely will, be incorporated
+- Beginning to implement logs for games played so they can be replayed via UI
