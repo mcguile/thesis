@@ -173,7 +173,7 @@ class GameUI:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
-    def play_game_from_log(self, log_file, start_at_first_ai_move=False):
+    def play_game_from_log(self, log_file, time_per_turn=0.5, start_at_first_ai_move=False):
         ai_line_found = False
         with open(log_file, 'r') as f:
             while True:
@@ -201,7 +201,7 @@ class GameUI:
                                 self.draw_game()
                                 pygame.display.update()
                                 self.clock.tick(30)
-                                time.sleep(0.5)
+                                time.sleep(time_per_turn)
 
     def play_full_game(self, player1, player2, time_per_move=0.5):
         printed_game_result = False
