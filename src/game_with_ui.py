@@ -263,6 +263,7 @@ class GameUI:
                 self.state.players_turn = opp(self.state.players_turn)
         self.state.players_turn = -1
         space = Space(self.state, vicinities=True, vicin_radius=2)
+        logging.info('ai')
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
