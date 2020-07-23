@@ -1,8 +1,6 @@
 import unittest
-from game import *
 from state import State
 from game_without_ui import GameNoUI
-from swarm import Space
 import random
 import numpy as np
 player_random = 'RANDOM'
@@ -47,7 +45,7 @@ def test_pso(vicinities, vicin_radius=3, num_games=1000):
         print(f'Black won 0 times')
 
 
-def test_comms(intention_criteria, num_games):
+def test_comms(intention_criteria, full_swarm, inf_moves, num_games, player1, player2):
     rand_moves = 20
     w_wins, w_turns, b_wins, b_turns = 0, 0, 0, 0
     print(f'{num_games} Games')
@@ -59,12 +57,15 @@ def test_comms(intention_criteria, num_games):
         np.random.seed(i)
         random.seed(i)
         game = GameNoUI(state=g,
-                        player1=player_swarm, player2=player_mcts,
+                        player1=player1, player2=player2,
                         generate_full_board=True,
                         random_moves_after_generate=rand_moves,
                         vicinities=True,
-                        vicin_radius=2,
-                        intention_criteria=intention_criteria)
+                        vicin_radius=3,
+                        intention_criteria=intention_criteria,
+                        full_swarm_move=full_swarm,
+                        infinite_moves=inf_moves,
+                        log_file=f'logs/{player1}_{player2}_{intention_criteria}_{i}.txt')
         winner = game.play_full_game()
         if winner == -1:
             if game.state.turn_count_white > (11 + rand_moves):
@@ -86,6 +87,9 @@ def test_comms(intention_criteria, num_games):
 
 
 class SwarmingTest(unittest.TestCase):
+    def test_swarm_vel(self):
+        print('\nTesting velocity with DT')
+        test_comms(intention_criteria=0, full_swarm=False, inf_moves=True, num_games=2, player1=player_swarm, player2=player_random)
 
     # def test_global_pso(self):
     #     test_pso(vicinities=False)
@@ -101,26 +105,24 @@ class SwarmingTest(unittest.TestCase):
     #
     # def test_comms0_velocity(self):
     #     print('\nTesting communication: velocity with DT')
-    #     test_comms(intention_criteria=0, num_games=100)
+    #     test_comms(intention_criteria=0, num_games=100, player1=player_swarm, player2=player_random)
     #
     # def test_comms1_accuracy(self):
     #     print("\nTesting communication: accuracy with DT")
-    #     test_comms(intention_criteria=1, num_games=100)
+    #     test_comms(intention_criteria=1, num_games=100, player1=player_swarm, player2=player_random)
     #
     # def test_comms2_fitness(self):
     #     print("\nTesting communication: fitness with DT")
-    #     test_comms(intention_criteria=2, num_games=100)
+    #     test_comms(intention_criteria=2, num_games=100, player1=player_swarm, player2=player_random)
     #
     # def test_comms3_weighted_vel_and_acc(self):
     #     print("Testing communication: weighted velocity and accuracy with DT")
-    #     test_comms(intention_criteria=3, num_games=100)
+    #     test_comms(intention_criteria=3, num_games=100, player1=player_swarm, player2=player_random)
     #
     # def test_direct_to_goal(self):
     #     print("Testing direct to goal")
-    #     test_comms(intention_criteria=4, num_games=100)
+    #     test_comms(intention_criteria=4, num_games=100, player1=player_swarm, player2=player_random)
 
-    def test_swarm_vs_mcts(self):
-        test_comms(intention_criteria=4, num_games=5)
 
 if __name__ == '__main__':
     unittest.main()

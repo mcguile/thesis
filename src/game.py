@@ -472,8 +472,11 @@ def move_to_board(state, event, fromm):
     for row in range(state.board.height):
         for col, hexa in enumerate(state.board.board[row]):
             if hexa.rect.collidepoint(event.pos) and (row, col) in state.possible_moves:
+                rf, cf = state.hexa_selected.r, state.hexa_selected.c
+                ret = f'r r {state.players_turn} {rf},{cf} {row},{col}'
                 make_move(state, row, col, fromm)
-                return
+                return ret
+
 
 
 def get_rack_inidices(player):
@@ -489,15 +492,18 @@ def generate_random_full_board(state):
     random.shuffle(state.black_pieces_start)
     row, col = state.white_pieces_start[-1]
     state.hexa_selected = state.start_tiles.board[row][col]
+    ret = f'r r {state.players_turn} {row},{col} (8,8)'
     make_move(state=state, to_row=8, to_col=8, fromm_board=state.start_tiles)
     row, col = state.black_pieces_start[-1]
     state.hexa_selected = state.start_tiles.board[row][col]
+    ret += f'\nr r {state.players_turn} {row},{col} (9,8)'
     make_move(state=state, to_row=9, to_col=8, fromm_board=state.start_tiles)
     state.first_move_white = False
     state.first_move_black = False
     while state.board.board_count < 22:
-        make_random_move_from_rack(state)
+        ret += '\n' + make_random_move_from_rack(state)
     # print('Random board state generated.')
+    return ret
 
 
 def make_random_move_from_board(state):
@@ -514,74 +520,92 @@ def make_random_move_from_board(state):
     row, col = move[0], move[1]
     rf, cf = move_from
     state.hexa_selected = state.board.board[rf][cf]
+    ret = f'r b {state.players_turn} {rf},{cf} {row},{col}'
     make_move(state=state, to_row=row, to_col=col, fromm_board=state.board)
-    return f'{rf}, {cf} to {row}, {col}'
+    return ret
 
 
 def make_random_move_from_rack(state):
-    row, col = state.white_pieces_start[-1] if state.players_turn == W else state.black_pieces_start[-1]
-    state.hexa_selected = state.start_tiles.board[row][col]
+    if state.players_turn == W:
+        if state.turn_count_white == 3 and not state.bee_placed_white:
+            rf, cf = 0, 3
+        else:
+            rf, cf = state.white_pieces_start[-1]
+    else:
+        if state.turn_count_black == 3 and not state.bee_placed_black:
+            rf, cf = 3, 3
+        else:
+            rf, cf = state.black_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[rf][cf]
     move = random.choice(list(get_possible_moves_from_rack(state)))
     row, col = move[0], move[1]
+    ret = f'r r {state.players_turn} {rf},{cf} {row},{col}'
     make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
+    return ret
 
 
 def make_random_move_from_anywhere(state):
+    ret = None
     if state.players_turn == W and not state.bee_placed_white and state.turn_count_white == 3:
         state.hexa_selected = state.start_tiles.board[0][3]
         move = random.choice(list(get_possible_moves_from_rack(state)))
         row, col = move[0], move[1]
+        ret = f'r r {state.players_turn} (0,3) {row},{col}'
         make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
     elif state.players_turn == B and not state.bee_placed_black and state.turn_count_black == 3:
         state.hexa_selected = state.start_tiles.board[3][3]
         move = random.choice(list(get_possible_moves_from_rack(state)))
         row, col = move[0], move[1]
+        ret = f'r r {state.players_turn} (3,3) {row},{col}'
         make_move(state=state, to_row=row, to_col=col, fromm_board=state.start_tiles)
     elif (state.players_turn == W and not state.bee_placed_white) or (state.players_turn == B and not state.bee_placed_black):
-        make_random_move_from_rack(state)
+        ret = make_random_move_from_rack(state)
     else:
         i = random.getrandbits(1)
         if i == 0 and \
                 ((state.players_turn == W and len(state.white_pieces_start) > 0) or
                  (state.players_turn == B and len(state.black_pieces_start) > 0)):
             try:
-                make_random_move_from_rack(state)
+                move = make_random_move_from_rack(state)
             except IndexError:
                 # Occurs if a player cannot legally move from rack but still has rack pieces
                 try:
-                    make_random_move_from_board(state)
+                    ret = make_random_move_from_board(state)
                 except IndexError:
                     state.players_turn = opp(state.players_turn)
         else:
             try:
-                make_random_move_from_board(state)
+                ret = make_random_move_from_board(state)
             except IndexError:
                 state.players_turn = opp(state.players_turn)
+    return ret
 
 
 def make_first_move_each(state):
     random.shuffle(state.white_pieces_start)
     random.shuffle(state.black_pieces_start)
-    row, col = state.white_pieces_start[-1]
-    state.hexa_selected = state.start_tiles.board[row][col]
+    r1, c1 = state.white_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[r1][c1]
     make_move(state=state, to_row=8, to_col=8, fromm_board=state.start_tiles)
-    row, col = state.black_pieces_start[-1]
-    state.hexa_selected = state.start_tiles.board[row][col]
+    r2, c2 = state.black_pieces_start[-1]
+    state.hexa_selected = state.start_tiles.board[r2][c2]
     make_move(state=state, to_row=9, to_col=8, fromm_board=state.start_tiles)
     state.first_move_white = False
     state.first_move_black = False
+    return f'f r -1 {r1},{c1} (8,8)\nf r 1 {r2},{c2} (9,8)'
 
 
 def make_mcts_move(state, action):
     if action.r_f < 0:
         action.r_f = abs(action.r_f) - 1
         state.hexa_selected = state.start_tiles.board[action.r_f][action.c_f]
-        # print(state.players_turn, (action.r_f, action.c_f), (action.r_t, action.c_t))
+        ret = f'm r {state.players_turn} {action.r_f},{action.c_f} {action.r_t},{action.c_t}'
         make_move(state, action.r_t, action.c_t, state.start_tiles)
     else:
         state.hexa_selected = state.board.board[action.r_f][action.c_f]
-        # print(state.players_turn, (action.r_f, action.c_f), (action.r_t, action.c_t))
+        ret = f'm b {state.players_turn} {action.r_f},{action.c_f} {action.r_t},{action.c_t}'
         make_move(state, action.r_t, action.c_t, state.board)
+    return ret
 
 
 def convert_vel(vel):
@@ -621,7 +645,8 @@ def nearest_move_after_vel(desired_pos, possible_moves, goal):
     return final_pos
 
 
-def move_nearest_to_goal(state):
+def move_nearest_to_goal(state, infinite_moves=False):
+    player_turn = state.players_turn
     final_move = []
     possible_moves_dict = dict()
     shortest_dist = float('inf')
@@ -655,19 +680,27 @@ def move_nearest_to_goal(state):
                     from_row, from_col = from_pos
                     to_row, to_col = to_pos
     else:
-        move_from = random.choice(list(possible_moves_dict.keys()))
-        move = random.choice(possible_moves_dict[move_from])
-        to_row, to_col = move[0], move[1]
-        from_row, from_col = move_from
+        if possible_moves_dict.keys():
+            move_from = random.choice(list(possible_moves_dict.keys()))
+            move = random.choice(possible_moves_dict[move_from])
+            to_row, to_col = move[0], move[1]
+            from_row, from_col = move_from
+        else:
+            if infinite_moves:
+                state.players_turn = player_turn
+            return "pass"
     state.hexa_selected = state.board.board[from_row][from_col]
-    print('White', (from_row, from_col), (to_row, to_col))
+    ret = f's b {state.players_turn} {from_row},{from_col} {to_row},{to_col}'
     make_move(state, to_row, to_col, state.board)
-    # state.players_turn = -1  # TODO REMOVE DURING GAME
+    if infinite_moves:
+        state.players_turn = player_turn
+    return ret
 
 
-def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False):
-    if intention_criteria == 4:
-        move_nearest_to_goal(state)
+def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False, infinite_moves=False):
+    player_turn = state.players_turn
+    if intention_criteria == 4 and not full_swarm_move:
+        return move_nearest_to_goal(state, infinite_moves)
     else:
         space.set_pbest()
         space.set_gbest()
@@ -692,8 +725,9 @@ def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False):
                     # Below is only for testing of PSO - not used in actual game play
                     if full_swarm_move:
                         make_move(state, r, c, state.board)
-                        state.players_turn = -1
                         particle.pos = np.array([r, c])
+                        if infinite_moves:
+                            state.players_turn = player_turn
                         if isGameOver(state):
                             return
                     # End test code
@@ -704,11 +738,15 @@ def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False):
                 r, c = best_particle.desired_pos_nearest
                 f_r, f_c = best_particle.pos
                 state.hexa_selected = state.board.board[f_r][f_c]
+                ret = f's b {state.players_turn} {f_r},{f_c} {r},{c}'
                 make_move(state, r, c, state.board)
                 best_particle.pos = np.array([r, c])
-                # state.players_turn = -1  # TODO in real game: pass turn to other player
+                if infinite_moves:
+                    state.players_turn = player_turn
+                return ret
             else:
                 state.turn_count_white += 1
+                return "pass"
 
 
 def set_intention(state, particle, set_of_new_pos, selected_pos, intention_criteria):

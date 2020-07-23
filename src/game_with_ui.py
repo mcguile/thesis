@@ -9,10 +9,12 @@ from mcts import MCTS
 import numpy as np
 from swarm import Space
 import ray
+import logging
+import ast
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
-
+pygame.init()
 ray.init()
 
 W = -1
@@ -49,34 +51,34 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
     return img
 
 
-def use_testboard():
-    testboard = Board(16, 16)
-    testboard.board[8][6] = Beetle(player=B, row=8, col=6)
-    testboard.board[7][7] = Grasshopper(player=B, row=7, col=7)
-    testboard.board[8][8] = Bee(player=B, row=8, col=8)
-    testboard.board[8][9] = Beetle(player=B, row=8, col=9)
-    testboard.board[9][7] = Beetle(player=W, row=9, col=7)
-    testboard.board[9][8] = Bee(player=W, row=9, col=8)
-    testboard.board[9][9] = Beetle(player=W, row=9, col=9)
-    testboard.board[10][8] = Grasshopper(player=W, row=10, col=8)
-    testboard.board[10][9] = Grasshopper(player=W, row=10, col=9)
-    g.bee_pos_black = [8, 8]
-    g.bee_pos_white = [9, 8]
-    g.bee_placed_white = True
-    g.bee_placed_black = True
-    g.black_positions = {(8, 6), (7, 7), (8, 8), (8, 9)}
-    g.white_positions = {(9, 7), (9, 8), (9, 9), (10, 8), (10, 9)}
-    g.first_move_black = False
-    g.first_move_white = False
-    g.turn_count_black = 4
-    g.turn_count_white = 5
-    testboard.board_count = 9
-    g.board = testboard
-    g.players_turn = 1
+# def use_testboard():
+#     testboard = Board(16, 16)
+#     testboard.board[8][6] = Beetle(player=B, row=8, col=6)
+#     testboard.board[7][7] = Grasshopper(player=B, row=7, col=7)
+#     testboard.board[8][8] = Bee(player=B, row=8, col=8)
+#     testboard.board[8][9] = Beetle(player=B, row=8, col=9)
+#     testboard.board[9][7] = Beetle(player=W, row=9, col=7)
+#     testboard.board[9][8] = Bee(player=W, row=9, col=8)
+#     testboard.board[9][9] = Beetle(player=W, row=9, col=9)
+#     testboard.board[10][8] = Grasshopper(player=W, row=10, col=8)
+#     testboard.board[10][9] = Grasshopper(player=W, row=10, col=9)
+#     g.bee_pos_black = [8, 8]
+#     g.bee_pos_white = [9, 8]
+#     g.bee_placed_white = True
+#     g.bee_placed_black = True
+#     g.black_positions = {(8, 6), (7, 7), (8, 8), (8, 9)}
+#     g.white_positions = {(9, 7), (9, 8), (9, 9), (10, 8), (10, 9)}
+#     g.first_move_black = False
+#     g.first_move_white = False
+#     g.turn_count_black = 4
+#     g.turn_count_white = 5
+#     testboard.board_count = 9
+#     g.board = testboard
+#     g.players_turn = 1
 
 
 class GameUI:
-    def __init__(self, state):
+    def __init__(self, state, log_file=None):
         """User Interface ATTR START"""
         self.pixel_width = 1000
         self.pixel_height = 1000
@@ -98,6 +100,8 @@ class GameUI:
         self.font = pygame.font.Font('freesansbold.ttf', 20)
         self.numbers = False
         self.state = state
+        if log_file:
+            logging.basicConfig(filename=log_file, level=logging.INFO)
 
     def draw_rack_tiles(self):
         y = 0
@@ -169,15 +173,44 @@ class GameUI:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
+    def play_game_from_log(self, log_file, start_at_first_ai_move=False):
+        ai_line_found = False
+        with open(log_file, 'r') as f:
+            while True:
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    for line in f.readlines():
+                        if line.strip() == 'ai':
+                            ai_line_found = True
+                        elif line.strip() == 'pass':
+                            if self.state.players_turn == W:
+                                self.state.turn_count_white += 1
+                            else:
+                                self.state.turn_count_black += 1
+                            self.state.players_turn = opp(self.state.players_turn)
+                        else:
+                            parts = line.split(' ')
+                            board = self.state.board if parts[1] == 'b' else self.state.start_tiles
+                            rf, cf = ast.literal_eval(parts[3])
+                            rt, ct = ast.literal_eval(parts[4])
+                            self.state.hexa_selected = board.board[rf][cf]
+                            make_move(self.state, rt, ct, board)
+                            if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
+                                self.draw_game()
+                                pygame.display.update()
+                                self.clock.tick(30)
+                                time.sleep(0.5)
+
     def play_full_game(self, player1, player2, time_per_move=0.5):
         printed_game_result = False
-        # make_first_move_each(self.state)
+        # logging.info(make_first_move_each(self.state))
         while self.state.turn_count_white < 31:
             try:
-                make_random_move_from_board(self.state)
+                logging.info(make_random_move_from_board(self.state))
             except IndexError:
                 self.state.players_turn = opp(self.state.players_turn)
-        self.state.players_turn = -1
         self.draw_game()
         pygame.display.update()
         self.clock.tick(30)
@@ -193,20 +226,20 @@ class GameUI:
                 if not isGameOver(self.state):
                     if self.state.players_turn == -1:
                         if player1 == player_random:
-                            make_random_move_from_anywhere(self.state)
+                            logging.info(make_random_move_from_anywhere(self.state))
                         elif player1 == player_mcts:
                             action = mcts_.multiprocess_search(self.state)
-                            make_mcts_move(self.state, action)
+                            logging.info(make_mcts_move(self.state, action))
                         else:
-                            make_swarm_move(self.state, space)
+                            logging.info(make_swarm_move(self.state, space))
                     elif self.state.players_turn == 1:
                         if player2 == player_random:
-                            make_random_move_from_anywhere(self.state)
+                            logging.info(make_random_move_from_anywhere(self.state))
                         elif player2 == player_mcts:
                             action = mcts_.multiprocess_search(self.state)
-                            make_mcts_move(self.state, action)
+                            logging.info(make_mcts_move(self.state, action))
                         else:
-                            make_swarm_move(self.state, space)
+                            logging.info(make_swarm_move(self.state, space))
                     self.draw_game()
                     pygame.display.update()
                     self.clock.tick(30)
@@ -225,7 +258,7 @@ class GameUI:
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
         while self.state.turn_count_white < 31:
             try:
-                make_random_move_from_board(self.state)
+                logging.info(make_random_move_from_board(self.state))
             except IndexError:
                 self.state.players_turn = opp(self.state.players_turn)
         self.state.players_turn = -1
@@ -244,26 +277,18 @@ class GameUI:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            # make_swarm_move(self.state, space, intention_criteria=3)
-                            move_nearest_to_goal(self.state)
+                            logging.info(make_swarm_move(self.state, space, intention_criteria=0, infinite_moves=True))
                         elif event.key == K_LEFT:
-                            print('MCTS is searching for the best action...')
                             action = mcts_.multiprocess_search(self.state)
-                            if action.r_f < 0:
-                                action.r_f = abs(action.r_f)-1
-                                self.state.hexa_selected = self.state.start_tiles.board[action.r_f][action.c_f]
-                                make_move(self.state, action.r_t, action.c_t, self.state.start_tiles)
-                            else:
-                                self.state.hexa_selected = self.state.board.board[action.r_f][action.c_f]
-                                make_move(self.state, action.r_t, action.c_t, self.state.board)
+                            logging.info(make_mcts_move(self.state, action))
                         elif event.key == K_DOWN:
-                            print(make_random_move_from_board(self.state))
+                            logging.info(make_random_move_from_board(self.state))
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
                             if self.mouse_pos.collidepoint(event.pos):
                                 self.deselect()
                             else:
-                                move_to_board(self.state, event, move_from)
+                                logging.info(move_to_board(self.state, event, move_from))
                                 if self.state.first_move_black and black_has_moved(self.state):
                                     self.state.first_move_black = False
                         else:
@@ -302,17 +327,7 @@ class GameUI:
             pygame.display.update()
             self.clock.tick(30)
 
-
-pygame.init()
 # np.random.seed(38)
 # random.seed(38)
-g = State(time_limit=None, iter_limit=100)
-game = GameUI(g)
-# use_testboard()
-generate_random_full_board(g)
-
-
-## COMMENT/UNCOMMENT BELOW FOR PLAY-BY-PLAY OR FULL GAME RUN
-
-game.playbyplay()
-# game.play_full_game(player_swarm, player_random)
+# g = State(time_limit=None, iter_limit=100)
+# game = GameUI(g)

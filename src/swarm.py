@@ -93,13 +93,15 @@ class Space:
         best_in_vicins = set()
         for particle in self.particles:
             best_intent_val = float('-inf')
-            best_intent_particle = particle
+            best_intent_particle = None
             for p_in_vicin in particle.vicinity:
                 if (p_in_vicin.intention >= best_intent_val) and \
+                    p_in_vicin.desired_pos_nearest and \
                         (p_in_vicin.desired_pos_nearest != (p_in_vicin.pos[0], p_in_vicin.pos[1])):
                     best_intent_val = p_in_vicin.intention
                     best_intent_particle = p_in_vicin
-            best_in_vicins.add(best_intent_particle)
+            if best_intent_particle:
+                best_in_vicins.add(best_intent_particle)
         return best_in_vicins
 
     def get_best_particle_equal_score(self, best_in_vicins):
