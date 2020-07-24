@@ -688,7 +688,7 @@ def move_nearest_to_goal(state, infinite_moves=False):
         else:
             if infinite_moves:
                 state.players_turn = player_turn
-            return "pass"
+            return 'pass'
     state.hexa_selected = state.board.board[from_row][from_col]
     ret = f's b {state.players_turn} {from_row},{from_col} {to_row},{to_col}'
     make_move(state, to_row, to_col, state.board)
@@ -731,22 +731,25 @@ def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False, i
                         if isGameOver(state):
                             return
                     # End test code
+                else:
+                    particle.desired_pos_nearest = None
         if not full_swarm_move:
             best_in_vicins = space.get_best_in_vicinities()
             best_particle = space.get_best_particle_equal_score(best_in_vicins)
-            if best_particle.desired_pos_nearest:
+            if best_particle and best_particle.desired_pos_nearest:
                 r, c = best_particle.desired_pos_nearest
                 f_r, f_c = best_particle.pos
                 state.hexa_selected = state.board.board[f_r][f_c]
                 ret = f's b {state.players_turn} {f_r},{f_c} {r},{c}'
                 make_move(state, r, c, state.board)
                 best_particle.pos = np.array([r, c])
-                if infinite_moves:
-                    state.players_turn = player_turn
-                return ret
             else:
                 state.turn_count_white += 1
-                return "pass"
+                print('pass')
+                ret = 'pass'
+            if infinite_moves:
+                state.players_turn = player_turn
+            return ret
 
 
 def set_intention(state, particle, set_of_new_pos, selected_pos, intention_criteria):
@@ -769,9 +772,15 @@ def set_intention(state, particle, set_of_new_pos, selected_pos, intention_crite
     if distance_between_(particle.pos, bee_pos) == 1:
         c = count_around_own_queen(state)
         if c == 4:
-            danger_intent = 2
+            if particle.pos[0] == bee_pos[0] and particle.pos[1] == bee_pos[1]:
+                danger_intent = 4
+            else:
+                danger_intent = 2
         elif c == 5:
-            danger_intent = 10
+            if particle.pos[0] == bee_pos[0] and particle.pos[1] == bee_pos[1]:
+                danger_intent = 8
+            else:
+                danger_intent = 4
     if intention_criteria == 0:
         particle.intention = velocity_intent + danger_intent
     elif intention_criteria == 1:

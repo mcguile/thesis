@@ -115,7 +115,7 @@ class Space:
             elif particle.intention == best_overall_value:
                 best_list.append(particle)
         # if len(best_list) == 1:
-        return best_list[0]
+        return best_list[0] if best_list else None
         # else:
         #     for particle in best_list:
         #         if particle.insect_type is Ant:

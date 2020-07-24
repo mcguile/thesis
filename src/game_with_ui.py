@@ -98,7 +98,7 @@ class GameUI:
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         self.font = pygame.font.Font('freesansbold.ttf', 20)
-        self.numbers = False
+        self.numbers = True
         self.state = state
         if log_file:
             logging.basicConfig(filename=log_file, level=logging.INFO)
@@ -176,32 +176,33 @@ class GameUI:
     def play_game_from_log(self, log_file, time_per_turn=0.5, start_at_first_ai_move=False):
         ai_line_found = False
         with open(log_file, 'r') as f:
-            while True:
-                for event in pygame.event.get():
-                    if event.type == QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    for line in f.readlines():
-                        if line.strip() == 'ai':
-                            ai_line_found = True
-                        elif line.strip() == 'pass':
-                            if self.state.players_turn == W:
-                                self.state.turn_count_white += 1
-                            else:
-                                self.state.turn_count_black += 1
-                            self.state.players_turn = opp(self.state.players_turn)
-                        else:
-                            parts = line.split(' ')
-                            board = self.state.board if parts[1] == 'b' else self.state.start_tiles
-                            rf, cf = ast.literal_eval(parts[3])
-                            rt, ct = ast.literal_eval(parts[4])
-                            self.state.hexa_selected = board.board[rf][cf]
-                            make_move(self.state, rt, ct, board)
-                            if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
-                                self.draw_game()
-                                pygame.display.update()
-                                self.clock.tick(30)
-                                time.sleep(time_per_turn)
+            for line in f.readlines():
+                if line == "\n":
+                    continue
+                if line.strip() == 'ai':
+                    ai_line_found = True
+                elif line.strip() == 'pass':
+                    if self.state.players_turn == W:
+                        self.state.turn_count_white += 1
+                    else:
+                        self.state.turn_count_black += 1
+                    self.state.players_turn = opp(self.state.players_turn)
+                else:
+                    parts = line.split(' ')
+                    board = self.state.board if parts[1] == 'b' else self.state.start_tiles
+                    rf, cf = ast.literal_eval(parts[3])
+                    rt, ct = ast.literal_eval(parts[4])
+                    self.state.hexa_selected = board.board[rf][cf]
+                    make_move(self.state, rt, ct, board)
+                    if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
+                        self.draw_game()
+                        pygame.display.update()
+                        self.clock.tick(30)
+                        time.sleep(time_per_turn)
+            self.draw_game()
+            pygame.display.update()
+            self.clock.tick(30)
+            time.sleep(6000)
 
     def play_full_game(self, player1, player2, time_per_move=0.5):
         printed_game_result = False
@@ -332,3 +333,5 @@ class GameUI:
 # random.seed(38)
 # g = State(time_limit=None, iter_limit=100)
 # game = GameUI(g)
+# generate_random_full_board(g)
+# game.playbyplay()
