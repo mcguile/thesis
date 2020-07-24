@@ -98,7 +98,7 @@ class GameUI:
         self.hexa_width, self.hexa_height = self.hexa_size
         self.mouse_pos = pygame.Rect((0, 0), self.hexa_size)
         self.font = pygame.font.Font('freesansbold.ttf', 20)
-        self.numbers = True
+        self.numbers = False
         self.state = state
         if log_file:
             logging.basicConfig(filename=log_file, level=logging.INFO)
@@ -263,7 +263,7 @@ class GameUI:
             except IndexError:
                 self.state.players_turn = opp(self.state.players_turn)
         self.state.players_turn = -1
-        space = Space(self.state, vicinities=True, vicin_radius=2)
+        space = Space(self.state, vicinities=True, vicin_radius=3)
         logging.info('ai')
         while True:
             for event in pygame.event.get():
@@ -279,7 +279,7 @@ class GameUI:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
                         elif event.key == K_RIGHT:
-                            logging.info(make_swarm_move(self.state, space, intention_criteria=0, infinite_moves=True))
+                            logging.info(make_swarm_move(self.state, space, intention_criteria=5, infinite_moves=True))
                         elif event.key == K_LEFT:
                             action = mcts_.multiprocess_search(self.state)
                             logging.info(make_mcts_move(self.state, action))
@@ -329,8 +329,9 @@ class GameUI:
             pygame.display.update()
             self.clock.tick(30)
 
-# np.random.seed(38)
-# random.seed(38)
+
+# np.random.seed(1)
+# random.seed(1)
 # g = State(time_limit=None, iter_limit=100)
 # game = GameUI(g)
 # generate_random_full_board(g)

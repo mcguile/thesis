@@ -5,6 +5,7 @@ import time
 import random
 import math
 import numpy as np
+from swarm import fitness
 from copy import deepcopy
 
 W = -1
@@ -645,27 +646,27 @@ def nearest_move_after_vel(desired_pos, possible_moves, goal):
     return final_pos
 
 
-def move_nearest_to_goal(state, infinite_moves=False):
+def move_nearest_to_goal(state, movable_positions, infinite_moves=False):
     player_turn = state.players_turn
     final_move = []
     possible_moves_dict = dict()
     shortest_dist = float('inf')
     goal = state.bee_pos_white if state.players_turn == B else state.bee_pos_black
-    for row in range(state.board.height):
-        for col, hexa in enumerate(state.board.board[row]):
-            if hexa.player == state.players_turn:
-                state.hexa_selected = hexa
-                possible_moves = get_possible_moves_from_board(state)
-                if possible_moves:
-                    possible_moves_dict[(row, col)] = list(possible_moves)
-                for move in possible_moves:
-                    d = distance_between_(move, goal)
-                    if d <= shortest_dist and distance_between_((row, col), goal) > d:
-                        if d == shortest_dist:
-                            final_move.append([(row, col), move])
-                        else:
-                            final_move = [[(row, col), move]]
-                        shortest_dist = d
+    for row, col in movable_positions:
+        hexa = state.board.board[row][col]
+        if hexa.player == state.players_turn:
+            state.hexa_selected = hexa
+            possible_moves = get_possible_moves_from_board(state)
+            if possible_moves:
+                possible_moves_dict[(row, col)] = list(possible_moves)
+            for move in possible_moves:
+                d = distance_between_(move, goal)
+                if d <= shortest_dist and distance_between_((row, col), goal) > d:
+                    if d == shortest_dist:
+                        final_move.append([(row, col), move])
+                    else:
+                        final_move = [[(row, col), move]]
+                    shortest_dist = d
     if final_move:
         if len(final_move) == 1:
             from_row, from_col = final_move[0][0][0], final_move[0][0][1]
@@ -699,60 +700,56 @@ def move_nearest_to_goal(state, infinite_moves=False):
 
 def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False, infinite_moves=False):
     player_turn = state.players_turn
-    if intention_criteria == 4 and not full_swarm_move:
-        return move_nearest_to_goal(state, infinite_moves)
-    else:
-        space.set_pbest()
-        space.set_gbest()
-        playable_positions = set()
-        for row in range(state.board.height):
-            for col, hexa in enumerate(state.board.board[row]):
-                if hexa.player == state.players_turn:
-                    playable_positions.add((row,col))
-        for particle, from_pos, new_vel in space.get_velocities():
-            f_r, f_c = from_pos
-            new_vel = convert_vel(new_vel)
-            particle.vel = new_vel
-            particle.intention = 0
-            if (new_vel[0] != 0 or new_vel[1] != 0) and (f_r, f_c) in playable_positions:
-                state.hexa_selected = state.board.board[f_r][f_c]
-                set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
-                possible_moves = get_possible_moves_from_board(state)
-                if possible_moves:
-                    r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
-                    particle.desired_pos_nearest = (r, c)
-                    set_intention(state, particle, set_of_new_pos, (r, c), intention_criteria)
-                    # Below is only for testing of PSO - not used in actual game play
-                    if full_swarm_move:
-                        make_move(state, r, c, state.board)
-                        particle.pos = np.array([r, c])
-                        if infinite_moves:
-                            state.players_turn = player_turn
-                        if isGameOver(state):
-                            return
-                    # End test code
-                else:
-                    particle.desired_pos_nearest = None
-        if not full_swarm_move:
-            best_in_vicins = space.get_best_in_vicinities()
-            best_particle = space.get_best_particle_equal_score(best_in_vicins)
-            if best_particle and best_particle.desired_pos_nearest:
-                r, c = best_particle.desired_pos_nearest
-                f_r, f_c = best_particle.pos
-                state.hexa_selected = state.board.board[f_r][f_c]
-                ret = f's b {state.players_turn} {f_r},{f_c} {r},{c}'
-                make_move(state, r, c, state.board)
-                best_particle.pos = np.array([r, c])
+    space.set_pbest()
+    space.set_gbest()
+    playable_positions = set()
+    for row in range(state.board.height):
+        for col, hexa in enumerate(state.board.board[row]):
+            if hexa.player == state.players_turn:
+                playable_positions.add((row,col))
+    for particle, from_pos, new_vel in space.get_velocities():
+        f_r, f_c = from_pos
+        new_vel = convert_vel(new_vel)
+        particle.vel = new_vel
+        particle.intention = 0
+        if (new_vel[0] != 0 or new_vel[1] != 0) and (f_r, f_c) in playable_positions:
+            state.hexa_selected = state.board.board[f_r][f_c]
+            set_of_new_pos = transform_cell_pos_from_velocity(new_vel, from_pos)
+            possible_moves = get_possible_moves_from_board(state)
+            if possible_moves:
+                r, c = nearest_move_after_vel(set_of_new_pos, possible_moves, space.target)
+                particle.desired_pos_nearest = (r, c)
+                set_intention(state, space, particle, set_of_new_pos, (r, c), intention_criteria)
+                # Below is only for testing of PSO - not used in actual game play
+                if full_swarm_move:
+                    make_move(state, r, c, state.board)
+                    particle.pos = np.array([r, c])
+                    if infinite_moves:
+                        state.players_turn = player_turn
+                    if isGameOver(state):
+                        return
+                # End test code
             else:
-                state.turn_count_white += 1
-                print('pass')
-                ret = 'pass'
-            if infinite_moves:
-                state.players_turn = player_turn
-            return ret
+                particle.desired_pos_nearest = None
+    if not full_swarm_move:
+        best_in_vicins = space.get_best_in_vicinities()
+        best_particle = space.get_best_particle_equal_score(best_in_vicins)
+        if best_particle and best_particle.desired_pos_nearest:
+            r, c = best_particle.desired_pos_nearest
+            f_r, f_c = best_particle.pos
+            state.hexa_selected = state.board.board[f_r][f_c]
+            ret = f's b {state.players_turn} {f_r},{f_c} {r},{c}'
+            make_move(state, r, c, state.board)
+            best_particle.pos = np.array([r, c])
+        else:
+            state.turn_count_white += 1
+            ret = 'pass'
+        if infinite_moves:
+            state.players_turn = player_turn
+        return ret
 
 
-def set_intention(state, particle, set_of_new_pos, selected_pos, intention_criteria):
+def set_intention(state, space, particle, set_of_new_pos, selected_pos, intention_criteria):
     # Intention Criteria:
     # 0 - Velocity + Danger Theory
     # 1 - Accuracy to desired position + Danger Theory
@@ -765,7 +762,7 @@ def set_intention(state, particle, set_of_new_pos, selected_pos, intention_crite
             desired_pos = desired_pos[1]
     else:
         desired_pos = desired_pos[0]
-    accuracy_intent = max(0, 3-distance_between_(desired_pos, selected_pos))
+    accuracy_intent = max(0, 5-distance_between_(desired_pos, selected_pos))
     velocity_intent = distance_between_(desired_pos, particle.pos)
     danger_intent = 0
     bee_pos = state.bee_pos_white if state.players_turn == W else state.bee_pos_black
@@ -775,12 +772,12 @@ def set_intention(state, particle, set_of_new_pos, selected_pos, intention_crite
             if particle.pos[0] == bee_pos[0] and particle.pos[1] == bee_pos[1]:
                 danger_intent = 4
             else:
-                danger_intent = 2
+                danger_intent = 3
         elif c == 5:
             if particle.pos[0] == bee_pos[0] and particle.pos[1] == bee_pos[1]:
                 danger_intent = 8
             else:
-                danger_intent = 4
+                danger_intent = 6
     if intention_criteria == 0:
         particle.intention = velocity_intent + danger_intent
     elif intention_criteria == 1:
@@ -788,9 +785,30 @@ def set_intention(state, particle, set_of_new_pos, selected_pos, intention_crite
     elif intention_criteria == 2:
         particle.intention = particle.pbest_value + danger_intent
     elif intention_criteria == 3:
-        fitness = particle.pbest_value
-        a = np.random.uniform(0.75, 1, 1)[0] if fitness <= 2 else np.random.uniform(0, 0.25, 1)[0]
-        b = np.random.uniform(0, 0.25, 1)[0] if fitness <= 2 else np.random.uniform(0.75, 1, 1)[0]
-        particle.intention = a * velocity_intent + b * accuracy_intent + danger_intent
-        particle.v_intent = velocity_intent
-        particle.a_intent = accuracy_intent
+        particle.intention = velocity_intent + accuracy_intent + danger_intent
+    elif intention_criteria == 4:
+        f = particle.pbest_value
+        if f <= 2:
+            particle.intention = accuracy_intent + danger_intent
+        else:
+            particle.intention = velocity_intent + danger_intent
+    elif intention_criteria == 5:
+        f = fitness(particle, space.target)
+        if space.vicin_radius >= f > 1:
+            # set intention based on if it can get into space around queen
+            r, c = particle.pos
+            state.hexa_selected = state.board.board[r][c]
+            poss_moves = get_possible_moves_from_board(state)
+            bee_r, bee_c = state.bee_pos_white if state.players_turn == 1 else state.bee_pos_black
+            neighs, _ = get_hexa_neighbours(bee_r, bee_c, state)
+            common = poss_moves.intersection(neighs)
+            # for r, c in deepcopy(common):
+            #     if type(state.board.board[r][c]) is not Blank:
+            #         common.remove((r, c))
+            if common:
+                particle.desired_pos_nearest = common.pop()
+                particle.intention = 5
+            else:
+                particle.intention = velocity_intent + danger_intent
+        else:
+            particle.intention = velocity_intent + danger_intent

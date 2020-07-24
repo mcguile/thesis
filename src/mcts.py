@@ -43,7 +43,7 @@ class MCTS:
                 try:
                     self.execute_round(root)
                 except TimeoutError:
-                    print("timed out")
+                    # print("timed out")
                     pass
 
             # print(self.action_reward)

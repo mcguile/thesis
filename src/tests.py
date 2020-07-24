@@ -50,12 +50,9 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
     w_wins, w_turns, b_wins, b_turns = 0, 0, 0, 0
     print(f'{num_games} Games')
     for i in range(1, num_games+1):
-        print(i)
         if i % 200 == 0:
             print(f'{i} games simulated...')
         g = State(time_limit=None, iter_limit=100)
-        np.random.seed(i)
-        random.seed(i)
         game = GameNoUI(state=g,
                         player1=player1, player2=player2,
                         generate_full_board=True,
@@ -70,10 +67,12 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
         if winner == -1:
             if game.state.turn_count_white > (11 + rand_moves):
                 # Accounting for random moves
+                print('White win')
                 w_wins += 1
                 w_turns += (game.state.turn_count_white - 11 - rand_moves)
         elif winner == 1:
             if game.state.turn_count_black > (11 + rand_moves):
+                print('Black win')
                 b_wins += 1
                 b_turns += (game.state.turn_count_black - 11 - rand_moves)
     try:
@@ -87,19 +86,37 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
 
 
 class SwarmingTest(unittest.TestCase):
-    def test_swarm0_vel(self):
-        print('\nTesting velocity with DT')
-        test_comms(folder='logs/velocity/', intention_criteria=0, full_swarm=False, inf_moves=True, num_games=100,
-                   player1=player_swarm, player2=player_random)
+    # def test_swarm0_vel(self):
+    #     print('\nTesting velocity with DT')
+    #     test_comms(folder='logs/velocity/', intention_criteria=0, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
+    #
+    # def test_swarm1_acc(self):
+    #     print('\nTesting accuracy with DT')
+    #     test_comms(folder='logs/accuracy/', intention_criteria=1, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
+    #
+    # def test_swarm2_fitness(self):
+    #     print('\nTesting fitness with DT')
+    #     test_comms(folder='logs/fitness/', intention_criteria=2, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
 
-    def test_swarm1_acc(self):
-        print('\nTesting accuracy with DT')
-        test_comms(folder='logs/accuracy/', intention_criteria=1, full_swarm=False, inf_moves=True, num_games=100,
-                   player1=player_swarm, player2=player_random)
+    # def test_swarm3_vel_and_acc(self):
+    #     print('\nTesting velocity + accuracy with DT')
+    #     test_comms(folder='logs/vel_and_acc/', intention_criteria=3, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
+    # def test_swarm4_vel_or_acc(self):
+    #     print('\nTesting velocity or accuracy with DT')
+    #     test_comms(folder='logs/vel_or_acc/', intention_criteria=4, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
+    # def test_swarm4_vel_or_acc(self):
+    #     print('\nTesting velocity or accuracy with DT')
+    #     test_comms(folder='logs/vel_or_acc/', intention_criteria=4, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
 
-    def test_swarm2_fitness(self):
-        print('\nTesting fitness with DT')
-        test_comms(folder='logs/fitness/', intention_criteria=2, full_swarm=False, inf_moves=True, num_games=100,
+    def test_swarm5_vel_or_dgt(self):
+        print('\nTesting velocity or DGT with DT')
+        test_comms(folder='logs/vel_or_dgt/', intention_criteria=5, full_swarm=False, inf_moves=True, num_games=100,
                    player1=player_swarm, player2=player_random)
 
     # def test_global_pso(self):

@@ -114,21 +114,21 @@ class Space:
                 best_list = [particle]
             elif particle.intention == best_overall_value:
                 best_list.append(particle)
-        # if len(best_list) == 1:
-        return best_list[0] if best_list else None
-        # else:
-        #     for particle in best_list:
-        #         if particle.insect_type is Ant:
-        #             particle.intention += 5
-        #         elif particle.insect_type is Beetle:
-        #             particle.intention += 4
-        #         elif particle.insect_type is Grasshopper:
-        #             particle.intention += 3
-        #         elif particle.insect_type is Spider:
-        #             particle.intention += 2
-        #     best_overall_value = 0
-        #     for particle in best_list:
-        #         if particle.intention > best_overall_value:
-        #             best_overall_value = particle.intention
-        #             best_overall_particle = particle
-        #     return best_overall_particle
+        if len(best_list) == 1:
+            return best_list[0]  # if best_list else None
+        else:
+            for particle in best_list:
+                if particle.insect_type is Ant:
+                    particle.intention += 5
+                elif particle.insect_type is Beetle:
+                    particle.intention += 4
+                elif particle.insect_type is Grasshopper:
+                    particle.intention += 3
+                elif particle.insect_type is Spider:
+                    particle.intention += 2
+            best_overall_value = 0
+            for particle in best_list:
+                if particle.intention > best_overall_value:
+                    best_overall_value = particle.intention
+                    best_overall_particle = particle
+            return best_overall_particle
