@@ -750,10 +750,6 @@ def make_swarm_move(state, space, intention_criteria=0, full_swarm_move=False, i
 
 
 def set_intention(state, space, particle, set_of_new_pos, selected_pos, intention_criteria):
-    # Intention Criteria:
-    # 0 - Velocity + Danger Theory
-    # 1 - Accuracy to desired position + Danger Theory
-    # 2 - Velocity + Accuracy + Danger Theory
     desired_pos = list(set_of_new_pos)
     if len(desired_pos) > 1:
         if distance_between_(desired_pos[0], selected_pos) <= distance_between_(desired_pos[1], selected_pos):

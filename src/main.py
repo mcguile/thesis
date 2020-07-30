@@ -7,9 +7,9 @@ if __name__ == '__main__':
     parser.add_argument('-f', type=str, required=True,
                         help='Log file name')
     parser.add_argument('-t', type=float,
-                        help='Time in seconds for each turn', default=True)
+                        help='Time in seconds for each turn', default=1.0)
     parser.add_argument('-ai', type=str,
-                        help='Start at beginning of AI moves',default=False)
+                        help='Start at beginning of AI moves', default=False)
 
     args = parser.parse_args()
     if pathlib.Path(args.f).exists():

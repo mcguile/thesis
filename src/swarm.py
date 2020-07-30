@@ -50,10 +50,11 @@ class Particle:
 
 
 class Space:
-    def __init__(self, state, vicinities=False, vicin_radius=2):
+    def __init__(self, state, player, vicinities=False, vicin_radius=2):
         self.state = state
         self.target = self.state.bee_pos_black
-        self.particles = [Particle((r, c), type(state.board.board[r][c])) for (r, c) in self.state.white_positions]
+        positions = self.state.white_positions if player == -1 else self.state.black_positions
+        self.particles = [Particle((r, c), type(state.board.board[r][c])) for (r, c) in positions]
         self.gbest_value = float('inf')
         self.gbest_pos = np.array([0, 0])
         self.vicinities = vicinities

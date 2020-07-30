@@ -1,7 +1,14 @@
-Known Bugs:
-- Selection from rack not highlighted - functionality not affected
-- ~~Beetle is occasionally broken - reason unknown, need investigation~~
-- ~~Insect (Ant noted) can occasionally slide into space that breaks Freedom-to-move rule~~
+### Execution Instructions
+To play the game from a random state with all pieces on the board:
+- From terminal, CD into `thesis/src`
+- `python3 game_with_ui.py` will run the game
+- Optional flag `-f [filename]` allows you to log the game to a text file
+- Either point and click to select pieces or press keys to execute AI for a single move
+    - `R` key executes a random move
+    - `M` key executes MCTS
+    - `S` key executes Swarm AI
+
+
 
 #### 16/06/2020 - 23/06/2020
 Known bugs:

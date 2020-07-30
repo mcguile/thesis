@@ -51,32 +51,6 @@ def get_pygame_image(insect_id, player=None, blit_selected=False, blit_possible=
     return img
 
 
-# def use_testboard():
-#     testboard = Board(16, 16)
-#     testboard.board[8][6] = Beetle(player=B, row=8, col=6)
-#     testboard.board[7][7] = Grasshopper(player=B, row=7, col=7)
-#     testboard.board[8][8] = Bee(player=B, row=8, col=8)
-#     testboard.board[8][9] = Beetle(player=B, row=8, col=9)
-#     testboard.board[9][7] = Beetle(player=W, row=9, col=7)
-#     testboard.board[9][8] = Bee(player=W, row=9, col=8)
-#     testboard.board[9][9] = Beetle(player=W, row=9, col=9)
-#     testboard.board[10][8] = Grasshopper(player=W, row=10, col=8)
-#     testboard.board[10][9] = Grasshopper(player=W, row=10, col=9)
-#     g.bee_pos_black = [8, 8]
-#     g.bee_pos_white = [9, 8]
-#     g.bee_placed_white = True
-#     g.bee_placed_black = True
-#     g.black_positions = {(8, 6), (7, 7), (8, 8), (8, 9)}
-#     g.white_positions = {(9, 7), (9, 8), (9, 9), (10, 8), (10, 9)}
-#     g.first_move_black = False
-#     g.first_move_white = False
-#     g.turn_count_black = 4
-#     g.turn_count_white = 5
-#     testboard.board_count = 9
-#     g.board = testboard
-#     g.players_turn = 1
-
-
 class GameUI:
     def __init__(self, state, log_file=None):
         """User Interface ATTR START"""
@@ -253,24 +227,26 @@ class GameUI:
                         else:
                             print(f"Black wins after {self.state.turn_count_black} turns")
 
-    def playbyplay(self):
+    def playbyplay(self, generate_start=True):
         move_from = None
         printed_game_result = False
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
-        while self.state.turn_count_white < 31:
-            try:
-                logging.info(make_random_move_from_board(self.state))
-            except IndexError:
-                self.state.players_turn = opp(self.state.players_turn)
-        self.state.players_turn = -1
-        space = Space(self.state, vicinities=True, vicin_radius=3)
+        if generate_start:
+            generate_random_full_board(self.state)
+            while self.state.turn_count_white < 31:
+                try:
+                    logging.info(make_random_move_from_board(self.state))
+                except IndexError:
+                    self.state.players_turn = opp(self.state.players_turn)
+        white_space = Space(self.state, player=W, vicinities=True, vicin_radius=3)
+        black_space = Space(self.state, player=B, vicinities=True, vicin_radius=3)
         logging.info('ai')
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-
+                space = white_space if self.state.players_turn == W else black_space
                 if not isGameOver(self.state):
                     if event.type == pygame.KEYDOWN:
                         if event.key == K_n:
@@ -278,12 +254,12 @@ class GameUI:
                         # elif event.key == K_BACKSPACE and self.state.turn_count_black > 3:
                         #     self.state = self.state.prev_state
                         #     self.deselect()
-                        elif event.key == K_RIGHT:
-                            logging.info(make_swarm_move(self.state, space, intention_criteria=5, infinite_moves=True))
-                        elif event.key == K_LEFT:
+                        elif event.key == K_s:
+                            logging.info(make_swarm_move(self.state, space, intention_criteria=5, infinite_moves=False))
+                        elif event.key == K_m:
                             action = mcts_.multiprocess_search(self.state)
                             logging.info(make_mcts_move(self.state, action))
-                        elif event.key == K_DOWN:
+                        elif event.key == K_r:
                             logging.info(make_random_move_from_board(self.state))
                     elif event.type == pygame.MOUSEBUTTONUP:
                         if self.state.hexa_selected:
@@ -330,6 +306,17 @@ class GameUI:
             self.clock.tick(30)
 
 
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Play Hive!')
+    parser.add_argument('-f', type=str, required=False,
+                        help='Log text file name to save')
+
+    args = parser.parse_args()
+    g = State(time_limit=None, iter_limit=100)
+    game = GameUI(g, log_file=args.f)
+    game.playbyplay()
 # np.random.seed(1)
 # random.seed(1)
 # g = State(time_limit=None, iter_limit=100)
