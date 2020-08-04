@@ -9,7 +9,7 @@ B = 1
 
 class State:
     def __init__(self, board=None, start_tiles=None, time_limit=None, iter_limit=100):
-        self.depth_limit = 6
+        self.depth_limit = 13
         self.time_limit = time_limit
         self.iter_limit = iter_limit
         self.board = board if board else Board(16, 16)

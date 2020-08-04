@@ -1,6 +1,5 @@
 import time
 import math
-import ray
 import numpy as np
 import timeout_decorator
 import multiprocessing
@@ -31,7 +30,6 @@ class MCTS:
         elif iter_limit and iter_limit < 1:
             raise ValueError('Iteration limit must be greater than one.')
 
-    @ray.remote
     def search(self, init_state):
         root = Node(init_state, None)
         if self.time_limit:
@@ -45,13 +43,11 @@ class MCTS:
                 except TimeoutError:
                     # print("timed out")
                     pass
-
-            # print(self.action_reward)
         return root
         # best_child = self.get_best_child(root)
         # return self.get_action(root, best_child)
 
-    @timeout_decorator.timeout(10, timeout_exception=TimeoutError)
+    # @timeout_decorator.timeout(10, timeout_exception=TimeoutError)
     def execute_round(self, root):
         node, starting_action = self.select_node(root)
         reward = self.rollout_policy(node.state, starting_action)
@@ -67,6 +63,9 @@ class MCTS:
 
     def expand(self, node):
         actions = node.state.get_possible_actions()
+        if not actions:
+            node.state.players_turn *= -1
+            actions = node.state.get_possible_actions()
         for action in actions:
             if action not in node.children:
                 new_node = Node(node.state.take_action(action), node)
@@ -99,29 +98,30 @@ class MCTS:
     def get_action(self, root, best_child):
         for action, node in root.children.items():
             if node is best_child:
-                # print(best_child.total_reward)
                 return action
 
     def random_policy(self, state, starting_action):
         while not state.is_terminal():
             try:
                 action = np.random.choice(state.get_possible_actions())
+                state = state.take_action(action)
             except ValueError:
-                time.sleep(1000000)
-                raise Exception('No possible actions for non-terminal state ' + str(state))
-            state = state.take_action(action)
+                return 0
+                # raise Exception('No possible actions for non-terminal state ' + str(state))
         reward = state.get_reward()
         return reward
 
     def multiprocess_search(self, state):
         num_processes = multiprocessing.cpu_count()-1 or 1
-        # p_t, p_p = (state.turn_count_white, "White") if state.players_turn == -1 else (state.turn_count_black, "Black")
-        # print(f'MCTS - Executing {num_processes} parallel processes for {p_p} turn {p_t+1}')
-        results = ray.get([self.search.remote(self, state) for _ in range(num_processes)])
-        root = results[0]
-        for node in results[1:]:
-            for action, child in node.children.items():
-                root.children[action].total_reward += child.total_reward
-                root.children[action].num_visits += child.num_visits
-        best_child = self.get_best_child(root)
-        return self.get_action(root, best_child)
+        with multiprocessing.Pool(num_processes) as p:
+            results = []
+            for i in range(num_processes):
+                results.append(p.apply_async(self.search, [state]))
+            root = results[0].get()
+            for res in results[1:]:
+                node = res.get()
+                for action, child in node.children.items():
+                    root.children[action].total_reward += child.total_reward
+                    root.children[action].num_visits += child.num_visits
+            best_child = self.get_best_child(root)
+            return self.get_action(root, best_child)

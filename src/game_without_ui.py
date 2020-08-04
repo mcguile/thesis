@@ -2,12 +2,9 @@ import os
 from game import *
 from mcts import MCTS
 from swarm import Space
-import ray
 import logging
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
-ray.init()
 
 player_random = 'RANDOM'
 player_mcts = 'MCTS'
@@ -49,14 +46,14 @@ class GameNoUI:
                             logging.info(move)
                     except IndexError:
                         self.state.players_turn = opp(self.state.players_turn)
-
-            # self.state.players_turn = -1
         else:
             logging.info(make_first_move_each(self.state))
         logging.info('ai')
-        self.space = Space(self.state, self.vicinities, self.vicin_radius)
-        while not isGameOver(self.state) and self.state.turn_count_white < (11 + self.rand_moves + 100):
-            if self.state.players_turn == -1:
+        white_space = Space(self.state, player=W, vicinities=self.vicinities, vicin_radius=self.vicin_radius)
+        black_space = Space(self.state, player=B, vicinities=self.vicinities, vicin_radius=self.vicin_radius)
+        while not isGameOver(self.state) and self.state.turn_count_white < (11 + self.rand_moves + 40):
+            self.space = white_space if self.state.players_turn == W else black_space
+            if self.state.players_turn == W:
                 if self.player1 == player_random:
                     logging.info(make_random_move_from_anywhere(self.state))
                 elif self.player1 == player_mcts:
@@ -64,7 +61,7 @@ class GameNoUI:
                     logging.info(make_mcts_move(self.state, action))
                 else:
                     logging.info(make_swarm_move(self.state, self.space, self.intention_criteria, self.full_swarm_move, self.inf_moves))
-            elif self.state.players_turn == 1:
+            elif self.state.players_turn == B:
                 if self.player2 == player_random:
                     logging.info(make_random_move_from_anywhere(self.state))
                 elif self.player2 == player_mcts:
@@ -72,8 +69,8 @@ class GameNoUI:
                     logging.info(make_mcts_move(self.state, action))
                 else:
                     logging.info(make_swarm_move(self.state, self.space, self.intention_criteria, self.full_swarm_move, self.inf_moves))
-        hww = has_won(self.state, -1)
-        hwb = has_won(self.state, 1)
+        hww = has_won(self.state, W)
+        hwb = has_won(self.state, B)
         if hww:
             # print(f"White wins after {self.state.turn_count_white} turns")
             return -1

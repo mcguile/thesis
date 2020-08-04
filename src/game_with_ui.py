@@ -8,14 +8,12 @@ from state import State
 from mcts import MCTS
 import numpy as np
 from swarm import Space
-import ray
 import logging
 import ast
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 pygame.init()
-ray.init()
 
 W = -1
 B = 1
@@ -314,7 +312,7 @@ if __name__ == '__main__':
                         help='Log text file name to save')
 
     args = parser.parse_args()
-    g = State(time_limit=None, iter_limit=100)
+    g = State(time_limit=None, iter_limit=1000)
     game = GameUI(g, log_file=args.f)
     game.playbyplay()
 # np.random.seed(1)

@@ -52,7 +52,7 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
     for i in range(1, num_games+1):
         if i % 200 == 0:
             print(f'{i} games simulated...')
-        g = State(time_limit=None, iter_limit=100)
+        g = State(time_limit=None, iter_limit=500)
         game = GameNoUI(state=g,
                         player1=player1, player2=player2,
                         generate_full_board=True,
@@ -62,7 +62,7 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
                         intention_criteria=intention_criteria,
                         full_swarm_move=full_swarm,
                         infinite_moves=inf_moves,
-                        log_file=f'{folder}{i}_{player1}_{player2}_{intention_criteria}.txt')
+                        log_file=f'{folder}{i+40}_{player1}_{player2}_{intention_criteria}.txt')
         winner = game.play_full_game()
         if winner == -1:
             if game.state.turn_count_white > (11 + rand_moves):
@@ -75,6 +75,8 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
                 print('Black win')
                 b_wins += 1
                 b_turns += (game.state.turn_count_black - 11 - rand_moves)
+        else:
+            print('Draw')
     try:
         print(f'White won {w_wins} times with avg plies of {round(w_turns / w_wins)}')
     except:
@@ -86,6 +88,19 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
 
 
 class SwarmingTest(unittest.TestCase):
+
+    # def test_global_pso(self):
+    #     test_pso(vicinities=False)
+    #
+    # def test_vicinities_pos1(self):
+    #     test_pso(vicinities=True, vicin_radius=1)
+    #
+    # def test_vicinities_pos2(self):
+    #     test_pso(vicinities=True, vicin_radius=2)
+    #
+    # def test_vicinities_pso3(self):
+    #     test_pso(vicinities=True, vicin_radius=3)
+    #
     # def test_swarm0_vel(self):
     #     print('\nTesting velocity with DT')
     #     test_comms(folder='logs/velocity/', intention_criteria=0, full_swarm=False, inf_moves=True, num_games=100,
@@ -113,43 +128,16 @@ class SwarmingTest(unittest.TestCase):
     #     print('\nTesting velocity or accuracy with DT')
     #     test_comms(folder='logs/vel_or_acc/', intention_criteria=4, full_swarm=False, inf_moves=True, num_games=100,
     #                player1=player_swarm, player2=player_random)
+    #
+    # def test_swarm5_vel_or_dgt(self):
+    #     print('\nTesting velocity or DGT with DT')
+    #     test_comms(folder='logs/vel_or_dgt/', intention_criteria=5, full_swarm=False, inf_moves=True, num_games=100,
+    #                player1=player_swarm, player2=player_random)
 
-    def test_swarm5_vel_or_dgt(self):
-        print('\nTesting velocity or DGT with DT')
-        test_comms(folder='logs/vel_or_dgt/', intention_criteria=5, full_swarm=False, inf_moves=True, num_games=100,
-                   player1=player_swarm, player2=player_random)
-
-    # def test_global_pso(self):
-    #     test_pso(vicinities=False)
-    #
-    # def test_vicinities_pos1(self):
-    #     test_pso(vicinities=True, vicin_radius=1)
-    #
-    # def test_vicinities_pos2(self):
-    #     test_pso(vicinities=True, vicin_radius=2)
-    #
-    # def test_vicinities_pso3(self):
-    #     test_pso(vicinities=True, vicin_radius=3)
-    #
-    # def test_comms0_velocity(self):
-    #     print('\nTesting communication: velocity with DT')
-    #     test_comms(intention_criteria=0, num_games=100, player1=player_swarm, player2=player_random)
-    #
-    # def test_comms1_accuracy(self):
-    #     print("\nTesting communication: accuracy with DT")
-    #     test_comms(intention_criteria=1, num_games=100, player1=player_swarm, player2=player_random)
-    #
-    # def test_comms2_fitness(self):
-    #     print("\nTesting communication: fitness with DT")
-    #     test_comms(intention_criteria=2, num_games=100, player1=player_swarm, player2=player_random)
-    #
-    # def test_comms3_weighted_vel_and_acc(self):
-    #     print("Testing communication: weighted velocity and accuracy with DT")
-    #     test_comms(intention_criteria=3, num_games=100, player1=player_swarm, player2=player_random)
-    #
-    # def test_direct_to_goal(self):
-    #     print("Testing direct to goal")
-    #     test_comms(intention_criteria=4, num_games=100, player1=player_swarm, player2=player_random)
+    def test_swarm_vs_mcts(self):
+        print('\nTesting Swarm vs MCTS')
+        test_comms(folder='logs/swarm_vs_mcts/', intention_criteria=5, full_swarm=False, inf_moves=False, num_games=100,
+                   player1=player_swarm, player2=player_mcts)
 
 
 if __name__ == '__main__':
