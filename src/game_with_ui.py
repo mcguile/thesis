@@ -10,6 +10,7 @@ import numpy as np
 from swarm import Space
 import logging
 import ast
+import linecache
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
@@ -145,85 +146,114 @@ class GameUI:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
-    def play_game_from_log(self, log_file, time_per_turn=0.5, start_at_first_ai_move=False):
-        ai_line_found = False
-        with open(log_file, 'r') as f:
-            for line in f.readlines():
-                if line == "\n":
-                    continue
-                if line.strip() == 'ai':
-                    ai_line_found = True
-                elif line.strip() == 'pass':
-                    if self.state.players_turn == W:
-                        self.state.turn_count_white += 1
-                    else:
-                        self.state.turn_count_black += 1
-                    self.state.players_turn = opp(self.state.players_turn)
+    def play_game_from_log(self, log_file, time_per_turn=0.5, start_at_first_ai_move=False, controlled=True):
+        ai_found = False
+
+        def execute_line(l, ai_line_found):
+            if l.strip() == 'ai':
+                ai_line_found = True
+            elif l.strip() == 'pass':
+                if self.state.players_turn == W:
+                    self.state.turn_count_white += 1
                 else:
-                    parts = line.split(' ')
-                    board = self.state.board if parts[1] == 'b' else self.state.start_tiles
-                    rf, cf = ast.literal_eval(parts[3])
-                    rt, ct = ast.literal_eval(parts[4])
-                    self.state.hexa_selected = board.board[rf][cf]
-                    make_move(self.state, rt, ct, board)
-                    if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
-                        self.draw_game()
-                        pygame.display.update()
-                        self.clock.tick(30)
-                        time.sleep(time_per_turn)
-            self.draw_game()
-            pygame.display.update()
-            self.clock.tick(30)
-            time.sleep(6000)
-
-    def play_full_game(self, player1, player2, time_per_move=0.5):
-        printed_game_result = False
-        # logging.info(make_first_move_each(self.state))
-        while self.state.turn_count_white < 31:
-            try:
-                logging.info(make_random_move_from_board(self.state))
-            except IndexError:
+                    self.state.turn_count_black += 1
                 self.state.players_turn = opp(self.state.players_turn)
-        self.draw_game()
-        pygame.display.update()
-        self.clock.tick(30)
-        time.sleep(time_per_move)
-        space = Space(self.state, vicinities=True, vicin_radius=1)
-        mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
-        while True:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if not isGameOver(self.state):
-                    if self.state.players_turn == -1:
-                        if player1 == player_random:
-                            logging.info(make_random_move_from_anywhere(self.state))
-                        elif player1 == player_mcts:
-                            action = mcts_.multiprocess_search(self.state)
-                            logging.info(make_mcts_move(self.state, action))
-                        else:
-                            logging.info(make_swarm_move(self.state, space))
-                    elif self.state.players_turn == 1:
-                        if player2 == player_random:
-                            logging.info(make_random_move_from_anywhere(self.state))
-                        elif player2 == player_mcts:
-                            action = mcts_.multiprocess_search(self.state)
-                            logging.info(make_mcts_move(self.state, action))
-                        else:
-                            logging.info(make_swarm_move(self.state, space))
+            else:
+                parts = l.split(' ')
+                board = self.state.board if parts[1] == 'b' else self.state.start_tiles
+                rf, cf = ast.literal_eval(parts[3])
+                rt, ct = ast.literal_eval(parts[4])
+                self.state.hexa_selected = board.board[rf][cf]
+                make_move(self.state, rt, ct, board)
+                if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
                     self.draw_game()
                     pygame.display.update()
                     self.clock.tick(30)
-                    time.sleep(time_per_move)
-                else:
-                    if not printed_game_result:
-                        printed_game_result = True
-                        if has_won(self.state, -1):
-                            print(f"White wins after {self.state.turn_count_white} turns")
+                    time.sleep(time_per_turn)
+            return ai_line_found
+
+        if not controlled:
+            with open(log_file, 'r') as f:
+                for line in f:
+                    ai_found = execute_line(line, ai_found)
+                time.sleep(6000)
+        else:
+            line_pos = 1
+            while True:
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        pygame.quit()
+                        sys.exit()
+
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == K_RIGHT:
+                            prevstate = deepcopy(self.state)
+                            try:
+                                execute_line(linecache.getline(log_file, line_pos), ai_found)
+                                self.state.prev_state = prevstate
+                                line_pos += 1
+                            except IndexError:
+                                pass
+                        elif event.key == K_LEFT:
+                            if self.state.prev_state:
+                                self.state = self.state.prev_state
+                                line_pos -= 1
+                        if line_pos < 63:
+                            print(f'Random move {line_pos-1}')
                         else:
-                            print(f"Black wins after {self.state.turn_count_black} turns")
+                            print(f'AI move {line_pos-61}')
+                    self.draw_game()
+                    pygame.display.update()
+                    self.clock.tick(30)
+
+    # def play_full_game(self, player1, player2, time_per_move=0.5):
+    #     printed_game_result = False
+    #     # logging.info(make_first_move_each(self.state))
+    #     while self.state.turn_count_white < 31:
+    #         try:
+    #             logging.info(make_random_move_from_board(self.state))
+    #         except IndexError:
+    #             self.state.players_turn = opp(self.state.players_turn)
+    #     self.draw_game()
+    #     pygame.display.update()
+    #     self.clock.tick(30)
+    #     time.sleep(time_per_move)
+    #     space = Space(self.state, vicinities=True, vicin_radius=1)
+    #     mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
+    #     while True:
+    #         for event in pygame.event.get():
+    #             if event.type == QUIT:
+    #                 pygame.quit()
+    #                 sys.exit()
+    #
+    #             if not isGameOver(self.state):
+    #                 if self.state.players_turn == -1:
+    #                     if player1 == player_random:
+    #                         logging.info(make_random_move_from_anywhere(self.state))
+    #                     elif player1 == player_mcts:
+    #                         action = mcts_.multiprocess_search(self.state)
+    #                         logging.info(make_mcts_move(self.state, action))
+    #                     else:
+    #                         logging.info(make_swarm_move(self.state, space))
+    #                 elif self.state.players_turn == 1:
+    #                     if player2 == player_random:
+    #                         logging.info(make_random_move_from_anywhere(self.state))
+    #                     elif player2 == player_mcts:
+    #                         action = mcts_.multiprocess_search(self.state)
+    #                         logging.info(make_mcts_move(self.state, action))
+    #                     else:
+    #                         logging.info(make_swarm_move(self.state, space))
+    #                 self.draw_game()
+    #                 pygame.display.update()
+    #                 self.clock.tick(30)
+    #                 time.sleep(time_per_move)
+    #             else:
+    #                 if not printed_game_result:
+    #                     printed_game_result = True
+    #                     if has_won(self.state, -1):
+    #                         print(f"White wins after {self.state.turn_count_white} turns")
+    #                     else:
+    #                         print(f"Black wins after {self.state.turn_count_black} turns")
 
     def playbyplay(self, generate_start=True):
         move_from = None
