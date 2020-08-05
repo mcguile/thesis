@@ -7,6 +7,13 @@ To play the game from a random state with all pieces on the board:
     - `R` key executes a random move
     - `M` key executes MCTS
     - `S` key executes Swarm AI
+    
+### Log Replay Instructions
+To play a game from a saved log file:
+- From terminal, CD into `thesis/src`
+- `python3 log_replay.py -f [log_file]
+- Use `LEFT` and `RIGHT` arrow keys to go back and forward in time.
+- The terminal displays if a random move is being executed or an AI move
 
 
 
