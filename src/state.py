@@ -30,6 +30,7 @@ class State:
         self.possible_moves = set()
         self.insect_types = [Ant, Beetle, Grasshopper, Bee, Spider]
         self.prev_state = None
+        self.next_state = None
 
     def get_possible_actions(self):
         possible_moves = []

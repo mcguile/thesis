@@ -146,65 +146,46 @@ class GameUI:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
-    def play_game_from_log(self, log_file, time_per_turn=0.5, start_at_first_ai_move=False, controlled=True):
-        ai_found = False
+    def play_game_from_log(self, log_file):
+        list_of_states = []
+        start_state = deepcopy(self.state)
+        with open(log_file, 'r') as f:
+            for line in f:
+                if line.strip() != 'ai' and line.strip() != 'pass':
+                    parts = line.split(' ')
+                    board = self.state.board if parts[1] == 'b' else self.state.start_tiles
+                    rf, cf = ast.literal_eval(parts[3])
+                    rt, ct = ast.literal_eval(parts[4])
+                    self.state.hexa_selected = board.board[rf][cf]
+                    make_move(self.state, rt, ct, board)
+                    list_of_states.append(deepcopy(self.state))
+        self.state = start_state
 
-        def execute_line(l, ai_line_found):
-            if l.strip() == 'ai':
-                ai_line_found = True
-            elif l.strip() == 'pass':
-                if self.state.players_turn == W:
-                    self.state.turn_count_white += 1
-                else:
-                    self.state.turn_count_black += 1
-                self.state.players_turn = opp(self.state.players_turn)
-            else:
-                parts = l.split(' ')
-                board = self.state.board if parts[1] == 'b' else self.state.start_tiles
-                rf, cf = ast.literal_eval(parts[3])
-                rt, ct = ast.literal_eval(parts[4])
-                self.state.hexa_selected = board.board[rf][cf]
-                make_move(self.state, rt, ct, board)
-                if not start_at_first_ai_move or (start_at_first_ai_move and ai_line_found):
-                    self.draw_game()
-                    pygame.display.update()
-                    self.clock.tick(30)
-                    time.sleep(time_per_turn)
-            return ai_line_found
+        line_pos = -1
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-        if not controlled:
-            with open(log_file, 'r') as f:
-                for line in f:
-                    ai_found = execute_line(line, ai_found)
-                time.sleep(6000)
-        else:
-            line_pos = 1
-            while True:
-                for event in pygame.event.get():
-                    if event.type == QUIT:
-                        pygame.quit()
-                        sys.exit()
-
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == K_RIGHT:
-                            prevstate = deepcopy(self.state)
-                            try:
-                                execute_line(linecache.getline(log_file, line_pos), ai_found)
-                                self.state.prev_state = prevstate
-                                line_pos += 1
-                            except IndexError:
-                                pass
-                        elif event.key == K_LEFT:
-                            if self.state.prev_state:
-                                self.state = self.state.prev_state
-                                line_pos -= 1
-                        if line_pos < 63:
-                            print(f'Random move {line_pos-1}')
-                        else:
-                            print(f'AI move {line_pos-61}')
-                    self.draw_game()
-                    pygame.display.update()
-                    self.clock.tick(30)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == K_RIGHT:
+                        line_pos += 1
+                        try:
+                            self.state = list_of_states[line_pos]
+                        except IndexError:
+                            pass
+                    elif event.key == K_LEFT:
+                        line_pos -= 1
+                        if line_pos >= 0:
+                            self.state = list_of_states[line_pos]
+                    if line_pos < 63:
+                        print(f'Random move {line_pos}')
+                    else:
+                        print(f'AI move {line_pos-62}')
+                self.draw_game()
+                pygame.display.update()
+                self.clock.tick(30)
 
     # def play_full_game(self, player1, player2, time_per_move=0.5):
     #     printed_game_result = False
