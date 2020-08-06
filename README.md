@@ -12,6 +12,7 @@ To play the game from a random state with all pieces on the board:
 To play a game from a saved log file:
 - From terminal, CD into `thesis/src`
 - `python3 log_replay.py -f [log_file]`
+- Optional flag `-ai` to start control after the random moves
 - Use `LEFT` and `RIGHT` arrow keys to go back and forward in time
 - The terminal displays if a random move or an AI move is being executed
 
