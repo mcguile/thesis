@@ -174,7 +174,7 @@ class GameUI:
                         try:
                             self.state = list_of_states[line_pos]
                         except IndexError:
-                            pass
+                            line_pos -= 1
                     elif event.key == K_LEFT:
                         line_pos -= 1
                         if line_pos >= 0:
@@ -323,12 +323,6 @@ if __name__ == '__main__':
                         help='Log text file name to save')
 
     args = parser.parse_args()
-    g = State(time_limit=None, iter_limit=1000)
+    g = State(time_limit=None, iter_limit=500)
     game = GameUI(g, log_file=args.f)
     game.playbyplay()
-# np.random.seed(1)
-# random.seed(1)
-# g = State(time_limit=None, iter_limit=100)
-# game = GameUI(g)
-# generate_random_full_board(g)
-# game.playbyplay()
