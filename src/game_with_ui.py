@@ -146,7 +146,7 @@ class GameUI:
         self.mouse_pos.x, self.mouse_pos.y = 0, 0
         self.state.hexa_selected = None
 
-    def play_game_from_log(self, log_file):
+    def play_game_from_log(self, log_file, start_from_ai_moves):
         list_of_states = []
         start_state = deepcopy(self.state)
         with open(log_file, 'r') as f:
@@ -160,8 +160,7 @@ class GameUI:
                     make_move(self.state, rt, ct, board)
                     list_of_states.append(deepcopy(self.state))
         self.state = start_state
-
-        line_pos = -1
+        line_pos = -1 if not start_from_ai_moves else 61
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
