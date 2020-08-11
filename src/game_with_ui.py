@@ -235,7 +235,7 @@ class GameUI:
     #                     else:
     #                         print(f"Black wins after {self.state.turn_count_black} turns")
 
-    def playbyplay(self, generate_start=True):
+    def playbyplay(self, generate_start=False):
         move_from = None
         printed_game_result = False
         mcts_ = MCTS(time_limit=self.state.time_limit, iter_limit=self.state.iter_limit)
