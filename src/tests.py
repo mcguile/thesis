@@ -65,7 +65,7 @@ def test_comms(folder, intention_criteria, full_swarm, inf_moves, num_games, pla
                         intention_criteria=intention_criteria,
                         full_swarm_move=full_swarm,
                         infinite_moves=inf_moves,
-                        log_file=f'{folder}{i}_{player1}_{player2}_{intention_criteria}.txt')
+                        log_file=f'{folder}{i+99}_{player1}_{player2}_{intention_criteria}.txt')
         winner = game.play_full_game()
         if winner == -1:
             if game.state.turn_count_white > (11 + rand_moves):
@@ -136,7 +136,7 @@ class SwarmingTest(unittest.TestCase):
 
     def test_swarm_vs_mcts(self):
         print('\nTesting Swarm vs MCTS')
-        test_comms(folder='logs/random_vs_mcts/', intention_criteria=5, full_swarm=False, inf_moves=False, num_games=100,
+        test_comms(folder='logs/random_vs_mcts/', intention_criteria=5, full_swarm=False, inf_moves=False, num_games=1,
                    player1=player_random, player2=player_mcts)
 
 
