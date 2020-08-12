@@ -160,7 +160,7 @@ class GameUI:
                     make_move(self.state, rt, ct, board)
                     list_of_states.append(deepcopy(self.state))
         self.state = start_state
-        line_pos = -1 if not start_from_ai_moves else 61
+        line_pos = 0 if not start_from_ai_moves else 60
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -169,19 +169,21 @@ class GameUI:
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == K_RIGHT:
-                        line_pos += 1
                         try:
+                            line_pos += 1
                             self.state = list_of_states[line_pos]
                         except IndexError:
                             line_pos -= 1
                     elif event.key == K_LEFT:
                         line_pos -= 1
-                        if line_pos >= 0:
-                            self.state = list_of_states[line_pos]
-                    if line_pos < 63:
+                        if line_pos < 0:
+                            line_pos = 0
+                        self.state = list_of_states[line_pos]
+
+                    if line_pos < 61:
                         print(f'Random move {line_pos}')
                     else:
-                        print(f'AI move {line_pos-62}')
+                        print(f'AI move {line_pos-61}')
                 self.draw_game()
                 pygame.display.update()
                 self.clock.tick(30)
