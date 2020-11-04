@@ -1,3 +1,5 @@
+This repo houses accompanying files for my postgraduate dissertation. The dissertaion itself is available upon request.
+
 ### Execution Instructions
 To play the game from a random state with all pieces on the board:
 - From terminal, CD into `thesis/src`
